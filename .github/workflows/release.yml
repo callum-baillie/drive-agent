@@ -29,7 +29,7 @@ jobs:
       # To keep it simple, we'll use GoReleaser's built-in support or rely on Zig CC.
       # But since the prompt allows us to implement it manually, maybe GoReleaser is best.
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: latest
