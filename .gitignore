@@ -44,5 +44,3 @@ node_modules/
 *.mobileprovision
 
 drive-agent-full-plan.md
-docs/*
-docs/

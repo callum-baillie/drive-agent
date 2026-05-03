@@ -58,7 +58,7 @@ See `docs/backup.md` for the manual setup guide. The restic adapter should:
 ### [TODO-004] Self-update from GitHub releases
 
 Currently stubbed. Implementation plan:
-1. Query `https://api.github.com/repos/drivemgr/drive-agent/releases/latest`
+1. Query `https://api.github.com/repos/callum-baillie/drive-agent/releases/latest`
 2. Download the appropriate binary for `GOOS/GOARCH`
 3. Verify SHA256 checksum against the release's `checksums.txt`
 4. Backup current binary to `.drive-agent/releases/drive-agent-v<version>`
