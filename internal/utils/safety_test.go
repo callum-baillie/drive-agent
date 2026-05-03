@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -76,6 +77,9 @@ func TestIsDangerousPath_HomeDirectory(t *testing.T) {
 
 
 func TestIsInsideVolumes(t *testing.T) {
+	if runtime.GOOS != "darwin" {
+		t.Skip("IsInsideVolumes is macOS specific")
+	}
 	tests := []struct {
 		path string
 		want bool

@@ -18,6 +18,14 @@ jobs:
       with:
         go-version: '1.22'
 
+    - name: Diagnostics
+      run: |
+        pwd
+        find . -maxdepth 3 -type f | sort
+        go version
+        go env GOMOD
+        go list ./...
+
     - name: Go Vet
       run: go vet ./...
 
@@ -40,6 +48,14 @@ jobs:
       uses: actions/setup-go@v5
       with:
         go-version: '1.22'
+
+    - name: Diagnostics
+      run: |
+        pwd
+        find . -maxdepth 3 -type f | sort
+        go version
+        go env GOMOD
+        go list ./...
 
     - name: Go Vet
       run: go vet ./...
