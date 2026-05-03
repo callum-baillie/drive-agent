@@ -35,6 +35,11 @@ jobs:
     - name: Build
       run: CGO_ENABLED=1 go build -v ./cmd/drive-agent
 
+    - name: Prepare Linux Smoke Test Drive
+      run: |
+        sudo mkdir -p /mnt/drive-agent-smoke
+        sudo chown "$USER" /mnt/drive-agent-smoke
+
     - name: Smoke Test
       run: bash tests/smoke_test.sh
 

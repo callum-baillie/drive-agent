@@ -6,13 +6,40 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
-TMPDIR_BASE="${PROJECT_ROOT}/tests/tmp-smoke-$$"
 BINARY="${PROJECT_ROOT}/drive-agent"
+OS="$(uname)"
+if [ "$OS" = "Darwin" ]; then
+    echo "--- Setting up macOS APFS Fake Drive ---"
+    DMG_PATH="/tmp/DriveAgentSmokeTest-$$.dmg"
+    VOL_NAME="DriveAgentSmokeTest-$$"
+    hdiutil create -size 500m -fs APFS -volname "$VOL_NAME" "$DMG_PATH"
+    hdiutil attach "$DMG_PATH"
+    TMPDIR_BASE="/Volumes/$VOL_NAME"
+    DRIVE_PATH="$TMPDIR_BASE/TestDrive"
+else
+    echo "--- Setting up Linux Fake Drive ---"
+    # Linux uses /mnt to avoid dangerous paths like /home or /tmp or /var
+    TMPDIR_BASE="/mnt/drive-agent-smoke/test-$$"
+    DRIVE_PATH="$TMPDIR_BASE/TestDrive"
+    
+    # Check if we have permission or if we need sudo (CI setup should have created it)
+    if [ ! -w "/mnt/drive-agent-smoke" ]; then
+        echo "Error: /mnt/drive-agent-smoke is not writable. Please create it and chown to your user."
+        echo "Example: sudo mkdir -p /mnt/drive-agent-smoke && sudo chown \$USER /mnt/drive-agent-smoke"
+        exit 1
+    fi
+fi
 
 cleanup() {
     echo ""
     echo "=== Cleaning up ==="
-    rm -rf "$TMPDIR_BASE"
+    if [ "$OS" = "Darwin" ]; then
+        cd /tmp # get out of the volume
+        hdiutil detach "/Volumes/$VOL_NAME" -force || true
+        rm -f "$DMG_PATH"
+    else
+        rm -rf "$TMPDIR_BASE"
+    fi
     rm -f "$BINARY"
     echo "Done."
 }
@@ -39,8 +66,7 @@ $BINARY self version
 echo ""
 
 # Create temp drive directory
-mkdir -p "$TMPDIR_BASE/TestDrive"
-DRIVE_PATH="$TMPDIR_BASE/TestDrive"
+mkdir -p "$DRIVE_PATH"
 
 # Init (using --allow-non-volume-path since we're in /tmp)
 echo "--- Testing: init ---"
