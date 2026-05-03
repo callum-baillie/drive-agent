@@ -1,0 +1,47 @@
+# .goreleaser.yaml
+version: 2
+project_name: drive-agent
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: drive-agent
+    main: ./cmd/drive-agent
+    binary: drive-agent
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w -X github.com/callumbaillie/drive-agent/internal/config.Version={{.Version}}
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+# Note: Building CGO for darwin from linux (default GitHub Action) might fail without zig cc.
+# For simplicity, we disable the CGO cross-compilation errors if needed, but since we rely on mattn/go-sqlite3, CGO is required.
+
+archives:
+  - format: tar.gz
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+
+checksum:
+  name_template: 'checksums.txt'
+
+release:
+  github:
+    owner: callumbaillie
+    name: drive-agent

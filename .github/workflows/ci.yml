@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Go Vet
+      run: go vet ./...
+
+    - name: Go Test
+      run: go test -v ./...
+
+    - name: Build
+      run: CGO_ENABLED=1 go build -v ./cmd/drive-agent
+
+    - name: Smoke Test
+      run: bash tests/smoke_test.sh
+
+  test-macos:
+    name: Run Tests (macOS)
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Go Vet
+      run: go vet ./...
+
+    - name: Go Test
+      run: go test -v ./...
+
+    - name: Build
+      run: CGO_ENABLED=1 go build -v ./cmd/drive-agent
+
+    - name: Smoke Test
+      run: bash tests/smoke_test.sh

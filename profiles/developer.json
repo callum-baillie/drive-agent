@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "profileName": "developer",
+  "description": "General developer setup with Node.js, Python, containers, and common tools",
+  "packageManagers": {
+    "installMissing": true,
+    "preferred": ["homebrew", "homebrew-cask", "npm"]
+  },
+  "categories": ["core", "shell", "javascript", "python", "containers", "databases"],
+  "packages": {
+    "include": [
+      "git", "gh", "jq", "curl", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide",
+      "starship", "lazygit", "delta", "tmux",
+      "node", "pnpm", "typescript",
+      "python", "uv",
+      "docker", "postgresql", "redis",
+      "stripe-cli", "vercel", "wrangler",
+      "cursor", "vscode"
+    ],
+    "exclude": []
+  },
+  "shell": {
+    "installAliases": true,
+    "addLocalBinToPath": true,
+    "configureDriveAgentAlias": true
+  },
+  "caches": {
+    "configurePnpmStore": true,
+    "configureNpmCache": false,
+    "configureBunCache": false
+  },
+  "safety": {
+    "dryRun": false,
+    "requireConfirmation": true,
+    "allowSudo": true,
+    "allowNativeInstallers": false,
+    "allowCurlPipeShell": false
+  }
+}

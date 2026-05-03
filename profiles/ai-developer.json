@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "profileName": "ai-developer",
+  "description": "AI-focused developer setup with all major AI coding tools",
+  "packageManagers": {
+    "installMissing": true,
+    "preferred": ["homebrew", "homebrew-cask", "npm"]
+  },
+  "categories": ["core", "shell", "javascript", "python", "containers", "databases", "ai-dev"],
+  "packages": {
+    "include": [
+      "git", "gh", "jq", "curl", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide",
+      "starship", "lazygit", "delta", "tmux",
+      "node", "pnpm", "typescript",
+      "python", "uv",
+      "docker",
+      "codex-cli", "claude-code", "chatgpt", "cursor", "windsurf",
+      "aider", "ollama", "vscode"
+    ],
+    "exclude": ["xcode", "android-studio"]
+  },
+  "shell": {
+    "installAliases": true,
+    "addLocalBinToPath": true,
+    "configureDriveAgentAlias": true
+  },
+  "caches": {
+    "configurePnpmStore": true,
+    "configureNpmCache": false,
+    "configureBunCache": false
+  },
+  "safety": {
+    "dryRun": false,
+    "requireConfirmation": true,
+    "allowSudo": true,
+    "allowNativeInstallers": false,
+    "allowCurlPipeShell": false
+  }
+}

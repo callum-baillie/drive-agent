@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "profileName": "mobile",
+  "description": "Mobile development setup with Xcode, Android Studio, and React Native/Expo tools",
+  "packageManagers": {
+    "installMissing": true,
+    "preferred": ["homebrew", "homebrew-cask", "npm"]
+  },
+  "categories": ["core", "shell", "javascript", "mobile"],
+  "packages": {
+    "include": [
+      "git", "gh", "jq", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide", "starship",
+      "node", "pnpm", "typescript",
+      "xcode", "android-studio",
+      "watchman", "cocoapods", "fastlane",
+      "expo-cli", "eas-cli",
+      "cursor", "vscode"
+    ],
+    "exclude": []
+  },
+  "shell": {
+    "installAliases": true,
+    "addLocalBinToPath": true,
+    "configureDriveAgentAlias": true
+  },
+  "caches": {
+    "configurePnpmStore": true,
+    "configureNpmCache": false,
+    "configureBunCache": false
+  },
+  "safety": {
+    "dryRun": false,
+    "requireConfirmation": true,
+    "allowSudo": true,
+    "allowNativeInstallers": true,
+    "allowCurlPipeShell": false
+  }
+}

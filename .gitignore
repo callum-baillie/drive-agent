@@ -1,0 +1,48 @@
+# Binaries
+drive-agent
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test
+tests/tmp-*
+*.test
+coverage/
+tmp/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+*.dmg
+
+# Build
+dist/
+build/
+.cache/
+node_modules/
+
+# Agent specific
+.drive-agent/
+*.sqlite
+*.db
+*.log
+
+# Env & Secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.mobileprovision
+
+drive-agent-full-plan.md
+docs/*
+docs/

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "profileName": "minimal",
+  "description": "Minimal developer setup with essential CLI tools",
+  "packageManagers": {
+    "installMissing": true,
+    "preferred": ["homebrew", "homebrew-cask"]
+  },
+  "categories": ["core", "shell"],
+  "packages": {
+    "include": ["git", "gh", "jq", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide", "starship", "vscode"],
+    "exclude": []
+  },
+  "shell": {
+    "installAliases": true,
+    "addLocalBinToPath": true,
+    "configureDriveAgentAlias": true
+  },
+  "caches": {
+    "configurePnpmStore": false,
+    "configureNpmCache": false,
+    "configureBunCache": false
+  },
+  "safety": {
+    "dryRun": false,
+    "requireConfirmation": true,
+    "allowSudo": false,
+    "allowNativeInstallers": false,
+    "allowCurlPipeShell": false
+  }
+}

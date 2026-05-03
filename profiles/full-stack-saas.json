@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "profileName": "full-stack-saas",
+  "description": "Full-stack SaaS developer setup with cloud, security, and infrastructure tools",
+  "packageManagers": {
+    "installMissing": true,
+    "preferred": ["homebrew", "homebrew-cask", "npm"]
+  },
+  "categories": ["core", "shell", "javascript", "python", "containers", "databases", "cloud", "security", "ai-dev"],
+  "packages": {
+    "include": [
+      "git", "gh", "jq", "curl", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide",
+      "starship", "lazygit", "delta",
+      "node", "pnpm", "typescript", "turbo", "vercel", "wrangler",
+      "python", "uv",
+      "docker", "kubectl", "helm",
+      "postgresql", "redis", "supabase-cli", "neonctl",
+      "awscli", "google-cloud-sdk", "terraform", "stripe-cli",
+      "snyk", "trivy", "gitleaks", "semgrep",
+      "postman", "httpie",
+      "cursor", "vscode"
+    ],
+    "exclude": []
+  },
+  "shell": {
+    "installAliases": true,
+    "addLocalBinToPath": true,
+    "configureDriveAgentAlias": true
+  },
+  "caches": {
+    "configurePnpmStore": true,
+    "configureNpmCache": false,
+    "configureBunCache": false
+  },
+  "safety": {
+    "dryRun": false,
+    "requireConfirmation": true,
+    "allowSudo": true,
+    "allowNativeInstallers": false,
+    "allowCurlPipeShell": false
+  }
+}
