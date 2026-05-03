@@ -6,15 +6,15 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/callumbaillie/drive-agent/internal/commands/backup"
-	"github.com/callumbaillie/drive-agent/internal/commands/cleanup"
-	gitcmd "github.com/callumbaillie/drive-agent/internal/commands/git"
-	"github.com/callumbaillie/drive-agent/internal/commands/host"
-	initcmd "github.com/callumbaillie/drive-agent/internal/commands/init"
-	"github.com/callumbaillie/drive-agent/internal/commands/org"
-	"github.com/callumbaillie/drive-agent/internal/commands/project"
-	"github.com/callumbaillie/drive-agent/internal/commands/self"
-	"github.com/callumbaillie/drive-agent/internal/config"
+	"github.com/callum-baillie/drive-agent/internal/commands/backup"
+	"github.com/callum-baillie/drive-agent/internal/commands/cleanup"
+	gitcmd "github.com/callum-baillie/drive-agent/internal/commands/git"
+	"github.com/callum-baillie/drive-agent/internal/commands/host"
+	initcmd "github.com/callum-baillie/drive-agent/internal/commands/init"
+	"github.com/callum-baillie/drive-agent/internal/commands/org"
+	"github.com/callum-baillie/drive-agent/internal/commands/project"
+	"github.com/callum-baillie/drive-agent/internal/commands/self"
+	"github.com/callum-baillie/drive-agent/internal/config"
 )
 
 // NewRootCmd creates the root cobra command.

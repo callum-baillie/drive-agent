@@ -7,11 +7,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/callumbaillie/drive-agent/internal/config"
-	"github.com/callumbaillie/drive-agent/internal/db"
-	"github.com/callumbaillie/drive-agent/internal/filesystem"
-	"github.com/callumbaillie/drive-agent/internal/ui"
-	"github.com/callumbaillie/drive-agent/internal/utils"
+	"github.com/callum-baillie/drive-agent/internal/config"
+	"github.com/callum-baillie/drive-agent/internal/db"
+	"github.com/callum-baillie/drive-agent/internal/filesystem"
+	"github.com/callum-baillie/drive-agent/internal/ui"
+	"github.com/callum-baillie/drive-agent/internal/utils"
 )
 
 func NewCmd() *cobra.Command {

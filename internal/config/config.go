@@ -27,7 +27,7 @@ const (
 
 var (
 	// RepoOwner is the GitHub organization or user hosting the releases
-	RepoOwner = "callumbaillie"
+	RepoOwner = "callum-baillie"
 
 	// RepoName is the GitHub repository name hosting the releases
 	RepoName = "drive-agent"

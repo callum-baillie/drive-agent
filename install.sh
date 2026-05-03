@@ -155,7 +155,7 @@ else
   "source_binary": "$BINARY_PATH",
   "os": "$(uname -s)",
   "arch": "$(uname -m)",
-  "repo_owner": "callumbaillie",
+  "repo_owner": "callum-baillie",
   "repo_name": "drive-agent",
   "previous_backup": $BACKUP_VAL
 }

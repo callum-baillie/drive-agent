@@ -1,4 +1,4 @@
-module github.com/callumbaillie/drive-agent
+module github.com/callum-baillie/drive-agent
 
 go 1.25.0
 

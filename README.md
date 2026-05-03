@@ -77,7 +77,7 @@ rm /tmp/DriveAgentTest.dmg
 
 - **Package managers**: Only Homebrew, Homebrew Cask, and npm global are fully implemented. Other managers are scaffolded as stub providers.
 - **Backup**: Commands exist but print guided setup instructions rather than executing backups automatically.
-- **Self-update**: Requires the `callumbaillie/drive-agent` repository to have a tagged GitHub Release with GoReleaser artifacts.
+- **Self-update**: Requires the `callum-baillie/drive-agent` repository to have a tagged GitHub Release with GoReleaser artifacts.
 - **Interactive host setup**: Uses simple terminal prompts, not a rich TUI selector with checkboxes.
 - **git push-all**: Intentionally not implemented (safety requirement).
 - **Disk space reporting**: `status` doesn't show free/used disk space natively.

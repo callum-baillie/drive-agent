@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/callumbaillie/drive-agent/internal/shell"
-	"github.com/callumbaillie/drive-agent/internal/ui"
+	"github.com/callum-baillie/drive-agent/internal/shell"
+	"github.com/callum-baillie/drive-agent/internal/ui"
 )
 
 func NewCmd() *cobra.Command {

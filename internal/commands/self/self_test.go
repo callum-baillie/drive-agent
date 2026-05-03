@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/callumbaillie/drive-agent/internal/config"
+	"github.com/callum-baillie/drive-agent/internal/config"
 )
 
 func TestDetermineAssetName(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/callumbaillie/drive-agent/internal/shell"
+	"github.com/callum-baillie/drive-agent/internal/shell"
 )
 
 // Homebrew implements Provider for Homebrew formulae.

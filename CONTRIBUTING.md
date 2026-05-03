@@ -8,7 +8,7 @@ To build and test Drive Agent locally, you will need Go 1.21+ installed and CGO 
 
 ```bash
 # Clone the repo
-git clone https://github.com/callumbaillie/drive-agent.git
+git clone https://github.com/callum-baillie/drive-agent.git
 cd drive-agent
 
 # Build the binary

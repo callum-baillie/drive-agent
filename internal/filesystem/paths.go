@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/callumbaillie/drive-agent/internal/config"
+	"github.com/callum-baillie/drive-agent/internal/config"
 )
 
 // FindDriveRoot walks upward from the given path to find a .drive-agent directory.

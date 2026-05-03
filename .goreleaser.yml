@@ -13,7 +13,7 @@ builds:
     env:
       - CGO_ENABLED=1
     ldflags:
-      - -s -w -X github.com/callumbaillie/drive-agent/internal/config.Version={{.Version}}
+      - -s -w -X github.com/callum-baillie/drive-agent/internal/config.Version={{.Version}}
     goos:
       - linux
       - windows
@@ -43,5 +43,5 @@ checksum:
 
 release:
   github:
-    owner: callumbaillie
+    owner: callum-baillie
     name: drive-agent
