@@ -18,7 +18,7 @@ Build the agent locally and initialize the structure on your new disk image:
 
 ```bash
 go build -o drive-agent ./cmd/drive-agent
-./drive-agent init --path /Volumes/DriveAgentTest --name DriveAgentTest
+./drive-agent init --path /Volumes/DriveAgentTest --name DriveAgentTest --non-interactive
 ```
 
 ## 3. Install the Agent

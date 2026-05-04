@@ -34,6 +34,7 @@ work across multiple host machines.`,
 	rootCmd.SetVersionTemplate(fmt.Sprintf("drive-agent v%s\n", config.Version))
 
 	// Add command groups
+	rootCmd.AddCommand(newVersionCmd())
 	rootCmd.AddCommand(initcmd.NewCmd())
 	rootCmd.AddCommand(newStatusCmd())
 	rootCmd.AddCommand(newDoctorCmd())
@@ -46,6 +47,16 @@ work across multiple host machines.`,
 	rootCmd.AddCommand(self.NewCmd())
 
 	return rootCmd
+}
+
+func newVersionCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Show version",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Fprintf(cmd.OutOrStdout(), "drive-agent v%s\n", config.Version)
+		},
+	}
 }
 
 // Execute runs the root command.

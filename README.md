@@ -59,7 +59,7 @@ hdiutil attach /tmp/DriveAgentTest.dmg
 go build -o drive-agent ./cmd/drive-agent
 
 # 3. Initialize the drive
-./drive-agent init --path /Volumes/DriveAgentTest --name DriveAgentTest
+./drive-agent init --path /Volumes/DriveAgentTest --name DriveAgentTest --non-interactive
 
 # 4. Install the binary to the drive
 ALLOW_TEST_DRIVE=1 ./install.sh --drive /Volumes/DriveAgentTest --binary ./drive-agent --skip-shell --yes
@@ -104,6 +104,7 @@ rm /tmp/DriveAgentTest.dmg
 ### Core
 | Command | Description |
 |---------|-------------|
+| `drive-agent version` | Show version |
 | `drive-agent --version` | Show version |
 | `drive-agent init` | Initialize a drive (non-destructive) |
 | `drive-agent status` | Show drive status summary |
@@ -198,8 +199,8 @@ Pre-built setup profiles in `profiles/`:
 ## Building
 
 ```bash
-# Requires Go 1.21+ and CGO
-CGO_ENABLED=1 go build -o drive-agent ./cmd/drive-agent
+# Requires Go 1.25+
+CGO_ENABLED=0 go build -o drive-agent ./cmd/drive-agent
 
 # Run tests
 go test ./...

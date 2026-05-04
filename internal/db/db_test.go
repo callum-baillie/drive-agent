@@ -32,12 +32,40 @@ func TestInitSchema(t *testing.T) {
 	}
 }
 
+func TestOpenConfiguresSQLitePragmas(t *testing.T) {
+	db := setupTestDB(t)
+
+	var foreignKeys int
+	if err := db.Conn().QueryRow("PRAGMA foreign_keys").Scan(&foreignKeys); err != nil {
+		t.Fatalf("query foreign_keys pragma: %v", err)
+	}
+	if foreignKeys != 1 {
+		t.Errorf("foreign_keys = %d, want 1", foreignKeys)
+	}
+
+	var journalMode string
+	if err := db.Conn().QueryRow("PRAGMA journal_mode").Scan(&journalMode); err != nil {
+		t.Fatalf("query journal_mode pragma: %v", err)
+	}
+	if journalMode != "wal" {
+		t.Errorf("journal_mode = %q, want %q", journalMode, "wal")
+	}
+
+	var busyTimeout int
+	if err := db.Conn().QueryRow("PRAGMA busy_timeout").Scan(&busyTimeout); err != nil {
+		t.Fatalf("query busy_timeout pragma: %v", err)
+	}
+	if busyTimeout != 5000 {
+		t.Errorf("busy_timeout = %d, want 5000", busyTimeout)
+	}
+}
+
 func TestOrganizationCRUD(t *testing.T) {
 	db := setupTestDB(t)
 
 	org := &Organization{
 		ID: "org_test", Name: "Test Org", Slug: "test-org",
-		Path: "/tmp/test/Orgs/test-org",
+		Path:      "/tmp/test/Orgs/test-org",
 		CreatedAt: "2026-01-01T00:00:00Z", UpdatedAt: "2026-01-01T00:00:00Z",
 	}
 	if err := db.InsertOrganization(org); err != nil {
@@ -70,7 +98,7 @@ func TestProjectCRUD(t *testing.T) {
 	// Create org first
 	org := &Organization{
 		ID: "org_test", Name: "Test", Slug: "test",
-		Path: "/tmp/test/Orgs/test",
+		Path:      "/tmp/test/Orgs/test",
 		CreatedAt: "2026-01-01T00:00:00Z", UpdatedAt: "2026-01-01T00:00:00Z",
 	}
 	db.InsertOrganization(org)
@@ -78,8 +106,8 @@ func TestProjectCRUD(t *testing.T) {
 	proj := &Project{
 		ID: "proj_test_myapp", OrganizationID: "org_test",
 		Name: "My App", Slug: "my-app",
-		Path: "/tmp/test/Orgs/test/projects/my-app",
-		GitRemote: "git@github.com:test/my-app.git",
+		Path:        "/tmp/test/Orgs/test/projects/my-app",
+		GitRemote:   "git@github.com:test/my-app.git",
 		ProjectType: "nextjs", PackageManager: "pnpm",
 		Tags:      []string{"web", "nextjs"},
 		CreatedAt: "2026-01-01T00:00:00Z", UpdatedAt: "2026-01-01T00:00:00Z",
@@ -137,7 +165,7 @@ func TestHostUpsert(t *testing.T) {
 		ID: "test-host", Hostname: "test-host.local",
 		OS: "darwin", Arch: "arm64", Shell: "zsh",
 		LastSeenAt: "2026-01-01T00:00:00Z",
-		CreatedAt: "2026-01-01T00:00:00Z", UpdatedAt: "2026-01-01T00:00:00Z",
+		CreatedAt:  "2026-01-01T00:00:00Z", UpdatedAt: "2026-01-01T00:00:00Z",
 	}
 
 	if err := db.UpsertHost(host); err != nil {

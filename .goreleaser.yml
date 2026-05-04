@@ -11,7 +11,7 @@ builds:
     main: ./cmd/drive-agent
     binary: drive-agent
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     ldflags:
       - -s -w -X github.com/callum-baillie/drive-agent/internal/config.Version={{.Version}}
     goos:
@@ -21,16 +21,17 @@ builds:
     goarch:
       - amd64
       - arm64
-
-# Note: Building CGO for darwin from linux (default GitHub Action) might fail without zig cc.
-# For simplicity, we disable the CGO cross-compilation errors if needed, but since we rely on mattn/go-sqlite3, CGO is required.
+    ignore:
+      - goos: windows
+        goarch: arm64
 
 archives:
-  - format: tar.gz
-    # use zip for windows archives
+  - formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
     name_template: >-
       {{ .ProjectName }}_
       {{- title .Os }}_

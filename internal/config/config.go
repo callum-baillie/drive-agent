@@ -3,9 +3,6 @@ package config
 import "time"
 
 const (
-	// Version is the current drive-agent version.
-	Version = "0.1.0"
-
 	// AgentDir is the hidden directory name for drive-agent metadata.
 	AgentDir = ".drive-agent"
 
@@ -26,6 +23,9 @@ const (
 )
 
 var (
+	// Version is the current drive-agent version. GoReleaser overrides this with ldflags.
+	Version = "0.1.0"
+
 	// RepoOwner is the GitHub organization or user hosting the releases
 	RepoOwner = "callum-baillie"
 

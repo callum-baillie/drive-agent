@@ -1,5 +1,12 @@
 # Commands Reference
 
+## drive-agent version
+
+```bash
+drive-agent version                                 # Show version
+drive-agent --version                               # Show version
+```
+
 ## drive-agent init
 
 Initialize a drive for drive-agent management.
@@ -103,6 +110,6 @@ drive-agent backup check                            # Verify (planned)
 
 ```bash
 drive-agent self version                            # Show version
-drive-agent self update                             # Update (planned)
-drive-agent self rollback                           # Rollback (planned)
+drive-agent self update                             # Update from GitHub releases
+drive-agent self rollback                           # Rollback to a previous backup
 ```

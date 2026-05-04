@@ -35,7 +35,7 @@ jobs:
       run: go test -v ./...
 
     - name: Build
-      run: CGO_ENABLED=1 go build -v ./cmd/drive-agent
+      run: CGO_ENABLED=0 go build -v ./cmd/drive-agent
 
     - name: Prepare Linux Smoke Test Drive
       run: |
@@ -72,7 +72,7 @@ jobs:
       run: go test -v ./...
 
     - name: Build
-      run: CGO_ENABLED=1 go build -v ./cmd/drive-agent
+      run: CGO_ENABLED=0 go build -v ./cmd/drive-agent
 
     - name: Smoke Test
       run: bash tests/smoke_test.sh

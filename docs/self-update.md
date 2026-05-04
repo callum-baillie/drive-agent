@@ -26,12 +26,16 @@ drive-agent self update --dry-run
 drive-agent self update --yes
 ```
 
+When no stable release exists yet, `drive-agent self update` falls back to the newest published non-draft prerelease. Use `--version v0.1.0-alpha.2` to force a specific alpha tag.
+
 ### Update Security & Safety
 
 1. **Path Validation:** The update command refuses to run if the binary is not located in the `.drive-agent/bin` directory.
 2. **Integrity Check:** Downloads `checksums.txt` from the GitHub Release and performs SHA256 checksum verification on the downloaded archive to ensure the file was not corrupted during transit. (Note: Authenticity verification via cryptographic signatures is planned for a future release).
 3. **Automatic Backups:** Copies your existing binary to `.drive-agent/backups/drive-agent-<timestamp>` before replacing it.
 4. **Atomic Swap:** Attempts to `mv` the new binary into place. If it fails, it automatically restores the backup.
+
+Alpha self-update supports Darwin arm64, Darwin amd64, Linux arm64, Linux amd64, and Windows amd64 release assets. Other OS/architecture pairs fail before download.
 
 ## Rollback
 
@@ -47,3 +51,5 @@ drive-agent self rollback
 # Revert to a specific backup
 drive-agent self rollback --backup drive-agent-v0.1.0-20231015120000
 ```
+
+If no backups exist, `drive-agent self rollback --list` prints `No backups found.` and exits successfully.

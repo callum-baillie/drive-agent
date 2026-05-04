@@ -91,7 +91,7 @@ if [[ -z "$BINARY_PATH" ]]; then
     else
         echo "Building drive-agent..."
         cd "$SCRIPT_DIR"
-        CGO_ENABLED=1 go build -o drive-agent ./cmd/drive-agent
+        CGO_ENABLED=0 go build -o drive-agent ./cmd/drive-agent
         BINARY_PATH="$SCRIPT_DIR/drive-agent"
         echo "Built successfully."
     fi
@@ -104,7 +104,7 @@ fi
 
 VERSION="unknown"
 if [[ "$DRY_RUN" == "false" ]]; then
-    VERSION=$("$BINARY_PATH" --version | awk '{print $3}') || VERSION="unknown"
+    VERSION=$("$BINARY_PATH" version | awk '{print $2}' | sed 's/^v//') || VERSION="unknown"
 fi
 
 # 3. Directories Setup

@@ -21,10 +21,16 @@ The `.github/workflows/ci.yml` workflow runs on all pull requests and pushes to 
 
 ## Release Artifacts
 
-The `.github/workflows/release.yml` workflow uses GoReleaser to build artifacts for the following architectures:
-- Darwin (macOS) `amd64` and `arm64`
-- Linux `amd64` and `arm64`
-- Windows `amd64`
+The `.github/workflows/release.yml` workflow uses GoReleaser to build the current alpha artifact matrix:
+
+- `drive-agent_Darwin_arm64.tar.gz`
+- `drive-agent_Darwin_x86_64.tar.gz`
+- `drive-agent_Linux_arm64.tar.gz`
+- `drive-agent_Linux_x86_64.tar.gz`
+- `drive-agent_Windows_x86_64.zip`
+- `checksums.txt`
+
+Windows arm64 is intentionally not published for the alpha release.
 
 ### Checksums
 

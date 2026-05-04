@@ -66,7 +66,7 @@ Built a complete MVP of the Drive Agent CLI tool in Go. The project compiles, al
 | `docs/package-catalog.md` | Package catalog format and categories |
 | `docs/safety.md` | Safety model documentation |
 | `docs/backup.md` | Backup guide with manual instructions |
-| `docs/todos.md` | Tracked TODOs and CGO tradeoff |
+| `docs/todos.md` | Tracked TODOs and pure-Go SQLite release notes |
 | `docs/mvp-summary.md` | This file |
 
 ## Commands Implemented
@@ -74,6 +74,7 @@ Built a complete MVP of the Drive Agent CLI tool in Go. The project compiles, al
 ### Fully Functional ✅
 | Command | Status |
 |---------|--------|
+| `drive-agent version` | ✅ Working |
 | `drive-agent --version` | ✅ Working |
 | `drive-agent init` | ✅ Full safety checks, directory creation, SQLite setup |
 | `drive-agent status` | ✅ Drive + host + git + cleanup summary |
@@ -101,17 +102,16 @@ Built a complete MVP of the Drive Agent CLI tool in Go. The project compiles, al
 | Command | Status |
 |---------|--------|
 | `drive-agent backup status/init/run/check` | 🔧 Shows available tools + manual guide |
-| `drive-agent self update/rollback` | 🔧 Describes planned update flow |
+| `drive-agent self update/rollback` | ✅ Implemented for GitHub release assets |
 
 ## Recommended Next Phase
 
 1. **Rich interactive TUI** for `host setup` (bubble tea or similar)
 2. **Full backup provider** implementation (restic adapter)
-3. **GitHub release-based self-update**
-4. **Additional package manager providers** (uv, pipx, cargo)
-5. **Shell config management** (update/remove marked blocks)
-6. **`git push-all`** with explicit per-repo confirmation
-7. **Dashboard** command with comprehensive overview
-8. **Workspace** command for multi-project editor workspaces
+3. **Additional package manager providers** (uv, pipx, cargo)
+4. **Shell config management** (update/remove marked blocks)
+5. **`git push-all`** with explicit per-repo confirmation
+6. **Dashboard** command with comprehensive overview
+7. **Workspace** command for multi-project editor workspaces
 9. **Port registry** for local development
 10. **Audit/scan** commands (large files, duplicates, stale projects)

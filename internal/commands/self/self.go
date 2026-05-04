@@ -63,8 +63,10 @@ func newVersionCmd() *cobra.Command {
 }
 
 type githubRelease struct {
-	TagName string `json:"tag_name"`
-	Assets  []struct {
+	TagName    string `json:"tag_name"`
+	Draft      bool   `json:"draft"`
+	Prerelease bool   `json:"prerelease"`
+	Assets     []struct {
 		Name               string `json:"name"`
 		BrowserDownloadURL string `json:"browser_download_url"`
 	} `json:"assets"`
@@ -104,30 +106,12 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("detect drive root: %w", err)
 	}
 
-	// Fetch release metadata
-	var url string
-	if targetVersion != "" {
-		url = fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", config.RepoOwner, config.RepoName, targetVersion)
-	} else {
-		url = fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", config.RepoOwner, config.RepoName)
-	}
-
-	ui.Info("Fetching release metadata from GitHub...")
-	resp, err := http.Get(url)
+	release, metadataURL, err := fetchReleaseMetadata(targetVersion)
 	if err != nil {
-		return fmt.Errorf("fetch release metadata: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to fetch release (HTTP %d)", resp.StatusCode)
+		return err
 	}
 
-	var release githubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
-		return fmt.Errorf("decode release metadata: %w", err)
-	}
-
+	ui.Info("Fetched release metadata from %s", metadataURL)
 	ui.Label("Target version", release.TagName)
 
 	if release.TagName == "v"+config.Version && targetVersion == "" {
@@ -135,7 +119,10 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	assetName := determineAssetName(runtime.GOOS, runtime.GOARCH)
+	assetName, err := determineAssetName(runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		return err
+	}
 	var assetURL string
 	var checksumsURL string
 
@@ -149,6 +136,9 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	if assetURL == "" {
 		return fmt.Errorf("could not find asset %s in release %s", assetName, release.TagName)
+	}
+	if checksumsURL == "" {
+		return fmt.Errorf("could not find checksums.txt in release %s", release.TagName)
 	}
 
 	ui.Label("Asset", assetName)
@@ -285,25 +275,24 @@ func runRollback(cmd *cobra.Command, args []string) error {
 	}
 
 	backupsDir := filepath.Join(filesystem.AgentPath(driveRoot), "backups")
-	entries, err := os.ReadDir(backupsDir)
-	if err != nil || len(entries) == 0 {
-		return fmt.Errorf("no backups found in %s", backupsDir)
+	backups, err := listBackups(backupsDir)
+	if err != nil {
+		return err
 	}
-
-	var backups []string
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasPrefix(e.Name(), "drive-agent-") {
-			backups = append(backups, e.Name())
-		}
-	}
-	sort.Strings(backups)
 
 	if listMode {
+		if len(backups) == 0 {
+			fmt.Println("No backups found.")
+			return nil
+		}
 		ui.SubHeader("Available Backups")
 		for _, b := range backups {
 			fmt.Println("  " + b)
 		}
 		return nil
+	}
+	if len(backups) == 0 {
+		return fmt.Errorf("no backups found in %s", backupsDir)
 	}
 
 	var selected string
@@ -367,6 +356,108 @@ func runRollback(cmd *cobra.Command, args []string) error {
 }
 
 // Helpers
+
+func fetchReleaseMetadata(targetVersion string) (githubRelease, string, error) {
+	if targetVersion != "" {
+		url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/tags/%s", config.RepoOwner, config.RepoName, targetVersion)
+		release, status, err := fetchRelease(url)
+		if err != nil {
+			return githubRelease{}, url, err
+		}
+		if status != http.StatusOK {
+			return githubRelease{}, url, fmt.Errorf("failed to fetch release (HTTP %d)", status)
+		}
+		return release, url, nil
+	}
+
+	latestURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", config.RepoOwner, config.RepoName)
+	release, status, err := fetchRelease(latestURL)
+	if err != nil {
+		return githubRelease{}, latestURL, err
+	}
+	if status == http.StatusOK {
+		return release, latestURL, nil
+	}
+	if status != http.StatusNotFound {
+		return githubRelease{}, latestURL, fmt.Errorf("failed to fetch release (HTTP %d)", status)
+	}
+
+	listURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases?per_page=10", config.RepoOwner, config.RepoName)
+	releases, status, err := fetchReleases(listURL)
+	if err != nil {
+		return githubRelease{}, listURL, err
+	}
+	if status != http.StatusOK {
+		return githubRelease{}, listURL, fmt.Errorf("failed to fetch releases (HTTP %d)", status)
+	}
+
+	release, ok := firstUsableRelease(releases)
+	if !ok {
+		return githubRelease{}, listURL, fmt.Errorf("no published GitHub releases found")
+	}
+	return release, listURL, nil
+}
+
+func fetchRelease(url string) (githubRelease, int, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return githubRelease{}, 0, fmt.Errorf("fetch release metadata: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return githubRelease{}, resp.StatusCode, nil
+	}
+
+	var release githubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+		return githubRelease{}, resp.StatusCode, fmt.Errorf("decode release metadata: %w", err)
+	}
+	return release, resp.StatusCode, nil
+}
+
+func fetchReleases(url string) ([]githubRelease, int, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, 0, fmt.Errorf("fetch releases metadata: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, resp.StatusCode, nil
+	}
+
+	var releases []githubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("decode releases metadata: %w", err)
+	}
+	return releases, resp.StatusCode, nil
+}
+
+func firstUsableRelease(releases []githubRelease) (githubRelease, bool) {
+	for _, release := range releases {
+		if !release.Draft {
+			return release, true
+		}
+	}
+	return githubRelease{}, false
+}
+
+func listBackups(backupsDir string) ([]string, error) {
+	entries, err := os.ReadDir(backupsDir)
+	if err != nil {
+		return nil, fmt.Errorf("read backups: %w", err)
+	}
+
+	var backups []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasPrefix(e.Name(), "drive-agent-") {
+			backups = append(backups, e.Name())
+		}
+	}
+	sort.Strings(backups)
+	return backups, nil
+}
 
 func downloadString(url string) (string, error) {
 	resp, err := http.Get(url)
@@ -437,17 +528,25 @@ func copyFile(src, dst string) error {
 	return out.Sync()
 }
 
-func determineAssetName(osName, archName string) string {
+func determineAssetName(osName, archName string) (string, error) {
 	if osName == "darwin" {
 		osName = "Darwin"
 	} else if osName == "windows" {
 		osName = "Windows"
-	} else {
+	} else if osName == "linux" {
 		osName = "Linux"
+	} else {
+		return "", fmt.Errorf("unsupported release OS %q", osName)
 	}
 
 	if archName == "amd64" {
 		archName = "x86_64"
+	} else if archName != "arm64" {
+		return "", fmt.Errorf("unsupported release architecture %q", archName)
+	}
+
+	if osName == "Windows" && archName == "arm64" {
+		return "", fmt.Errorf("unsupported release target windows/arm64")
 	}
 
 	ext := ".tar.gz"
@@ -455,7 +554,7 @@ func determineAssetName(osName, archName string) string {
 		ext = ".zip"
 	}
 
-	return fmt.Sprintf("%s_%s_%s%s", config.RepoName, osName, archName, ext)
+	return fmt.Sprintf("%s_%s_%s%s", config.RepoName, osName, archName, ext), nil
 }
 
 func parseChecksums(data, assetName string) (string, error) {

@@ -2,39 +2,22 @@
 
 ## P0 — Deferred / Tracked
 
-### [TODO-001] Evaluate `modernc.org/sqlite` for pure-Go releases
+### [TODO-001] Track pure-Go SQLite release behavior
 
-**Current state:** Drive Agent uses `github.com/mattn/go-sqlite3` which requires CGO.
+**Current state:** Drive Agent uses `modernc.org/sqlite`, a pure-Go SQLite driver, so release builds can run with `CGO_ENABLED=0`.
 
 **Tradeoff:**
-- `go-sqlite3` is the most battle-tested SQLite binding for Go. It wraps the official SQLite C library exactly, giving 100% SQLite feature parity and the best performance.
-- However, it **requires CGO** (`CGO_ENABLED=1`), which means:
-  - Cross-compilation requires a C cross-compiler toolchain for the target OS/arch
-  - The resulting binary is dynamically linked to system C libraries (normally fine on macOS/Linux)
-  - CI pipelines need to install `gcc` or equivalent
-  - Pure-Go `go install` (without CGO) will fail
-
-**Alternative: `modernc.org/sqlite`**
-- A pure-Go port of SQLite (auto-translated from C)
-- Enables `CGO_ENABLED=0` builds, simplifying cross-compilation
+- The pure-Go driver simplifies cross-compilation and avoids C toolchain drift in GitHub Actions.
 - Slightly larger binary, slightly lower performance (~10-30% slower on write-heavy workloads)
-- API is nearly identical (drop-in replacement for the `database/sql` driver)
-- Actively maintained; used in production by projects like CockroachDB tooling
+- API usage remains behind `database/sql`, so the application surface is unchanged.
 
-**Recommendation:** Evaluate `modernc.org/sqlite` when adding a CI release pipeline (GitHub Actions). The pure-Go binary is easier to distribute cross-platform. For single-user CLI tools on macOS, the performance difference is negligible.
-
-**Migration path:**
+**Current DB open path:**
 ```go
-// Current (go-sqlite3):
-import _ "github.com/mattn/go-sqlite3"
-db, _ := sql.Open("sqlite3", path)
-
-// Future (modernc):
 import _ "modernc.org/sqlite"
-db, _ := sql.Open("sqlite", path)
+db, _ := sql.Open("sqlite", "file:/path/to/drive-agent.sqlite?_pragma=busy_timeout(5000)&_pragma=foreign_keys(ON)&_pragma=journal_mode(WAL)")
 ```
 
-The only change needed is the import path and driver name string.
+Keep DB tests covering WAL, foreign keys, and busy timeout behavior before changing drivers again.
 
 ---
 
@@ -55,15 +38,14 @@ See `docs/backup.md` for the manual setup guide. The restic adapter should:
 
 ---
 
-### [TODO-004] Self-update from GitHub releases
+### [TODO-004] Self-update release signing
 
-Currently stubbed. Implementation plan:
-1. Query `https://api.github.com/repos/callum-baillie/drive-agent/releases/latest`
-2. Download the appropriate binary for `GOOS/GOARCH`
-3. Verify SHA256 checksum against the release's `checksums.txt`
-4. Backup current binary to `.drive-agent/releases/drive-agent-v<version>`
-5. Atomic swap: write to temp file, then `os.Rename` to final location
-6. Run any pending schema migrations
+Self-update now downloads GitHub release assets and verifies SHA256 checksums from `checksums.txt`. It does not yet verify publisher authenticity.
+
+Future work:
+1. Add release signing with cosign, minisign, or GPG.
+2. Verify signatures before applying a downloaded update.
+3. Run any pending schema migrations after a successful update.
 
 ---
 

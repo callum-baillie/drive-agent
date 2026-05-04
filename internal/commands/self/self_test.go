@@ -18,15 +18,23 @@ func TestDetermineAssetName(t *testing.T) {
 		os   string
 		arch string
 		want string
+		err  bool
 	}{
-		{"darwin", "amd64", "drive-agent_Darwin_x86_64.tar.gz"},
-		{"darwin", "arm64", "drive-agent_Darwin_arm64.tar.gz"},
-		{"windows", "amd64", "drive-agent_Windows_x86_64.zip"},
-		{"linux", "amd64", "drive-agent_Linux_x86_64.tar.gz"},
+		{"darwin", "amd64", "drive-agent_Darwin_x86_64.tar.gz", false},
+		{"darwin", "arm64", "drive-agent_Darwin_arm64.tar.gz", false},
+		{"windows", "amd64", "drive-agent_Windows_x86_64.zip", false},
+		{"linux", "amd64", "drive-agent_Linux_x86_64.tar.gz", false},
+		{"linux", "arm64", "drive-agent_Linux_arm64.tar.gz", false},
+		{"windows", "arm64", "", true},
+		{"freebsd", "amd64", "", true},
+		{"linux", "386", "", true},
 	}
 
 	for _, tt := range tests {
-		got := determineAssetName(tt.os, tt.arch)
+		got, err := determineAssetName(tt.os, tt.arch)
+		if (err != nil) != tt.err {
+			t.Errorf("determineAssetName(%q, %q) error = %v, wantErr %v", tt.os, tt.arch, err, tt.err)
+		}
 		if got != tt.want {
 			t.Errorf("determineAssetName(%q, %q) = %q; want %q", tt.os, tt.arch, got, tt.want)
 		}
@@ -54,6 +62,63 @@ func TestParseChecksums(t *testing.T) {
 		}
 		if got != tt.want {
 			t.Errorf("parseChecksums(%q) = %q, want %q", tt.asset, got, tt.want)
+		}
+	}
+}
+
+func TestFirstUsableReleaseSkipsDrafts(t *testing.T) {
+	releases := []githubRelease{
+		{TagName: "v0.1.0-alpha.3", Draft: true},
+		{TagName: "v0.1.0-alpha.2", Prerelease: true},
+	}
+
+	release, ok := firstUsableRelease(releases)
+	if !ok {
+		t.Fatal("firstUsableRelease returned ok=false")
+	}
+	if release.TagName != "v0.1.0-alpha.2" {
+		t.Fatalf("release = %q, want v0.1.0-alpha.2", release.TagName)
+	}
+}
+
+func TestFirstUsableReleaseEmpty(t *testing.T) {
+	if _, ok := firstUsableRelease([]githubRelease{{TagName: "v0.1.0-alpha.3", Draft: true}}); ok {
+		t.Fatal("firstUsableRelease returned ok=true for only draft releases")
+	}
+}
+
+func TestListBackupsEmpty(t *testing.T) {
+	backups, err := listBackups(t.TempDir())
+	if err != nil {
+		t.Fatalf("listBackups: %v", err)
+	}
+	if len(backups) != 0 {
+		t.Fatalf("backups = %v, want empty", backups)
+	}
+}
+
+func TestListBackupsFiltersAndSorts(t *testing.T) {
+	tmpDir := t.TempDir()
+	for _, name := range []string{"notes.txt", "drive-agent-v0.1.0-b", "drive-agent-v0.1.0-a"} {
+		if err := os.WriteFile(filepath.Join(tmpDir, name), []byte("x"), 0644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	if err := os.Mkdir(filepath.Join(tmpDir, "drive-agent-v0.1.0-dir"), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	backups, err := listBackups(tmpDir)
+	if err != nil {
+		t.Fatalf("listBackups: %v", err)
+	}
+	want := []string{"drive-agent-v0.1.0-a", "drive-agent-v0.1.0-b"}
+	if len(backups) != len(want) {
+		t.Fatalf("backups = %v, want %v", backups, want)
+	}
+	for i := range want {
+		if backups[i] != want[i] {
+			t.Fatalf("backups = %v, want %v", backups, want)
 		}
 	}
 }
