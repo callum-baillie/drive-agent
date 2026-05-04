@@ -50,7 +50,7 @@ drive-agent host packages list --category ai-dev
 
 - Never installs without showing what will happen
 - `--dry-run` shows exact commands
-- Shell config creates timestamped backups
+- Shell config creates backups before editing
 - Uses marked blocks for easy removal
 - Packages with `requiresExplicitApproval` are never auto-installed
 - No silent `sudo` or `curl | bash`

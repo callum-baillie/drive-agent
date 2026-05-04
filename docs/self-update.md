@@ -26,7 +26,7 @@ drive-agent self update --dry-run
 drive-agent self update --yes
 ```
 
-When no stable release exists yet, `drive-agent self update` falls back to the newest published non-draft prerelease. Use `--version v0.1.0-alpha.2` to force a specific alpha tag.
+`drive-agent self update` uses GitHub's latest release endpoint when no version is specified. If GitHub has no latest release, it falls back to the newest published non-draft release returned by the releases API. Use `--version v0.1.0-alpha.3` to force the current alpha tag.
 
 ### Update Security & Safety
 

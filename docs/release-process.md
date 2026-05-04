@@ -13,8 +13,8 @@ go build ./cmd/drive-agent
 bash tests/smoke_test.sh
 
 # Tag the release
-git tag v0.1.0-alpha.2
-git push origin v0.1.0-alpha.2
+git tag v0.1.0-alpha.3
+git push origin v0.1.0-alpha.3
 ```
 
 ## What Happens Next
@@ -32,4 +32,4 @@ Once the first release is published, you can test the `self update` command loca
 
 ## Recovering from a Failed Alpha Release
 
-If a tag exists but the GitHub Release was not created, leave the failed tag in place and create the next alpha tag. For example, keep `v0.1.0-alpha.1` as the failed attempt and publish `v0.1.0-alpha.2` as the first usable prerelease.
+If a tag exists but the GitHub Release was not created, leave the failed tag in place and create the next alpha tag. The early alpha tags are retained for this reason; `v0.1.0-alpha.3` is the current release verified by the audit flow.

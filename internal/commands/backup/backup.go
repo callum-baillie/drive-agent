@@ -10,11 +10,15 @@ import (
 )
 
 func NewCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "backup", Short: "Backup utilities"}
-	cmd.AddCommand(&cobra.Command{Use: "status", Short: "Show backup status", RunE: runStatus})
-	cmd.AddCommand(&cobra.Command{Use: "init", Short: "Initialize backup configuration", RunE: runInit})
-	cmd.AddCommand(&cobra.Command{Use: "run", Short: "Run a backup", RunE: runBackup})
-	cmd.AddCommand(&cobra.Command{Use: "check", Short: "Verify backup integrity", RunE: runCheck})
+	cmd := &cobra.Command{
+		Use:   "backup",
+		Short: "Backup utilities",
+		Long:  "Backup commands are MVP stubs. They report available tools and planned behavior, but do not yet create or run managed backups.",
+	}
+	cmd.AddCommand(&cobra.Command{Use: "status", Short: "Show backup status", Long: "Show installed backup tools. Managed backup execution is not implemented yet.", RunE: runStatus})
+	cmd.AddCommand(&cobra.Command{Use: "init", Short: "Initialize backup configuration (planned)", Long: "Planned command. It currently prints the intended backup-provider direction without writing configuration.", RunE: runInit})
+	cmd.AddCommand(&cobra.Command{Use: "run", Short: "Run a backup (planned)", Long: "Planned command. It currently does not execute backups.", RunE: runBackup})
+	cmd.AddCommand(&cobra.Command{Use: "check", Short: "Verify backup integrity (planned)", Long: "Planned command. It currently does not run backup integrity checks.", RunE: runCheck})
 	return cmd
 }
 

@@ -15,6 +15,7 @@ import (
 	"github.com/callum-baillie/drive-agent/internal/commands/project"
 	"github.com/callum-baillie/drive-agent/internal/commands/self"
 	"github.com/callum-baillie/drive-agent/internal/config"
+	"github.com/callum-baillie/drive-agent/internal/filesystem"
 )
 
 // NewRootCmd creates the root cobra command.
@@ -28,10 +29,15 @@ work across multiple host machines.`,
 		Version:       config.Version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			drivePath, _ := cmd.Flags().GetString("path")
+			filesystem.SetDriveRootOverride(drivePath)
+		},
 	}
 
 	// Set version template
 	rootCmd.SetVersionTemplate(fmt.Sprintf("drive-agent v%s\n", config.Version))
+	rootCmd.PersistentFlags().String("path", "", "Path to drive root (defaults to searching from the current directory)")
 
 	// Add command groups
 	rootCmd.AddCommand(newVersionCmd())

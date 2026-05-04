@@ -66,6 +66,19 @@ func TestParseChecksums(t *testing.T) {
 	}
 }
 
+func TestParseChecksumsRequiresExactAssetName(t *testing.T) {
+	data := `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa  drive-agent_Darwin_arm64.tar.gz.backup
+bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb  ./drive-agent_Darwin_arm64.tar.gz`
+
+	got, err := parseChecksums(data, "drive-agent_Darwin_arm64.tar.gz")
+	if err != nil {
+		t.Fatalf("parseChecksums: %v", err)
+	}
+	if got != "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" {
+		t.Fatalf("checksum = %q, want exact asset checksum", got)
+	}
+}
+
 func TestFirstUsableReleaseSkipsDrafts(t *testing.T) {
 	releases := []githubRelease{
 		{TagName: "v0.1.0-alpha.3", Draft: true},
@@ -97,6 +110,16 @@ func TestListBackupsEmpty(t *testing.T) {
 	}
 }
 
+func TestListBackupsMissingDirIsEmpty(t *testing.T) {
+	backups, err := listBackups(filepath.Join(t.TempDir(), "missing"))
+	if err != nil {
+		t.Fatalf("listBackups: %v", err)
+	}
+	if len(backups) != 0 {
+		t.Fatalf("backups = %v, want empty", backups)
+	}
+}
+
 func TestListBackupsFiltersAndSorts(t *testing.T) {
 	tmpDir := t.TempDir()
 	for _, name := range []string{"notes.txt", "drive-agent-v0.1.0-b", "drive-agent-v0.1.0-a"} {
@@ -106,6 +129,9 @@ func TestListBackupsFiltersAndSorts(t *testing.T) {
 	}
 	if err := os.Mkdir(filepath.Join(tmpDir, "drive-agent-v0.1.0-dir"), 0755); err != nil {
 		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.Symlink(filepath.Join(tmpDir, "drive-agent-v0.1.0-a"), filepath.Join(tmpDir, "drive-agent-v0.1.0-link")); err != nil {
+		t.Fatalf("symlink: %v", err)
 	}
 
 	backups, err := listBackups(tmpDir)

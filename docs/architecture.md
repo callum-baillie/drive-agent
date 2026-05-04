@@ -21,7 +21,7 @@ drive-agent/
 │   │   ├── git/                 # Git bulk operations
 │   │   ├── cleanup/             # Build artifact cleanup
 │   │   ├── backup/              # Backup utilities (stub)
-│   │   └── self/                # Self-update (stub)
+│   │   └── self/                # Self-update and rollback
 │   ├── config/                   # Types, constants, layout definitions
 │   ├── db/                       # SQLite database layer
 │   ├── filesystem/               # Path resolution, directory ops
@@ -49,7 +49,7 @@ Package managers are abstracted behind a `Provider` interface. Each provider imp
 Destructive operations (cleanup, host installs) default to dry-run or require explicit confirmation. Path safety validation prevents operations outside the drive root.
 
 ### Drive Root Detection
-`FindDriveRoot()` walks upward from the current directory looking for `.drive-agent/DRIVE_AGENT_ROOT`. This allows commands to work from any subdirectory.
+`FindDriveRoot()` walks upward from the current directory or from the global `--path` override looking for `.drive-agent/DRIVE_AGENT_ROOT`. This allows commands to work from any subdirectory or from scripts that pass the drive root explicitly.
 
 ## Database Schema
 

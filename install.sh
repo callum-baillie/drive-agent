@@ -60,7 +60,7 @@ fi
 # Basic path validation (block root, home, system paths)
 # This also handles descendants by checking string prefixes.
 # Ensure trailing slash for prefix matching to avoid blocking /usr-local when blocking /usr.
-DANGEROUS=("/Users/" "/System/" "/Library/" "/private/" "/etc/" "/bin/" "/usr/" "/opt/")
+DANGEROUS=("/Users/" "/home/" "/System/" "/Library/" "/private/" "/etc/" "/bin/" "/usr/" "/opt/" "/tmp/" "/var/")
 CHECK_PATH="${DRIVE_ROOT%/}/" # add trailing slash
 
 if [[ "$CHECK_PATH" == "/" ]]; then
@@ -192,7 +192,13 @@ if [[ "$SKIP_SHELL" == "false" ]]; then
                 echo "[Dry Run] Would append shell block to $SHELL_RC"
             elif [[ "$DO_SHELL" == "true" ]]; then
                 BACKUP_RC="${SHELL_RC}.drive-agent-backup-$(date +%Y-%m-%d)"
-                cp "$SHELL_RC" "$BACKUP_RC"
+                mkdir -p "$(dirname "$SHELL_RC")"
+                if [[ -f "$SHELL_RC" ]]; then
+                    cp "$SHELL_RC" "$BACKUP_RC"
+                else
+                    : > "$SHELL_RC"
+                    echo "Created $SHELL_RC"
+                fi
                 
                 # Append block (quoting DRIVE_ROOT properly)
                 cat >> "$SHELL_RC" <<EOF

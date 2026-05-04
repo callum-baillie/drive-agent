@@ -23,6 +23,8 @@ import (
 	"github.com/callum-baillie/drive-agent/internal/ui"
 )
 
+var httpClient = &http.Client{Timeout: 30 * time.Second}
+
 func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{Use: "self", Short: "Self-management commands"}
 	cmd.AddCommand(newVersionCmd())
@@ -160,7 +162,9 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 
 	// Create temp dir
 	tmpDir := filepath.Join(filesystem.AgentPath(driveRoot), "releases", "tmp")
-	os.MkdirAll(tmpDir, 0755)
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return fmt.Errorf("create release temp dir: %w", err)
+	}
 
 	// Download checksums
 	ui.Info("Downloading checksums...")
@@ -218,11 +222,15 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		}
 		return err
 	}
-	os.Chmod(exe, 0755)
+	if err := os.Chmod(exe, 0755); err != nil {
+		return fmt.Errorf("set executable permissions: %w", err)
+	}
 
 	// Update metadata
 	newVer := strings.TrimPrefix(release.TagName, "v")
-	os.WriteFile(filepath.Join(filesystem.AgentPath(driveRoot), "VERSION"), []byte(newVer), 0644)
+	if err := os.WriteFile(filepath.Join(filesystem.AgentPath(driveRoot), "VERSION"), []byte(newVer), 0644); err != nil {
+		return fmt.Errorf("write version metadata: %w", err)
+	}
 
 	installMeta := map[string]string{
 		"installed_at":    time.Now().UTC().Format(time.RFC3339),
@@ -238,7 +246,11 @@ func runUpdate(cmd *cobra.Command, args []string) error {
 		"previous_backup": backupPath,
 	}
 	if b, err := json.MarshalIndent(installMeta, "", "  "); err == nil {
-		os.WriteFile(filepath.Join(filesystem.AgentPath(driveRoot), "install.json"), b, 0644)
+		if err := os.WriteFile(filepath.Join(filesystem.AgentPath(driveRoot), "install.json"), b, 0644); err != nil {
+			return fmt.Errorf("write install metadata: %w", err)
+		}
+	} else {
+		return fmt.Errorf("encode install metadata: %w", err)
 	}
 
 	fmt.Println()
@@ -323,7 +335,9 @@ func runRollback(cmd *cobra.Command, args []string) error {
 	// Backup current state just in case
 	timestamp := time.Now().Format("20060102150405")
 	failsafe := filepath.Join(backupsDir, fmt.Sprintf("drive-agent-failsafe-%s", timestamp))
-	copyFile(exe, failsafe)
+	if err := copyFile(exe, failsafe); err != nil {
+		return fmt.Errorf("create failsafe backup: %w", err)
+	}
 
 	// Perform rollback
 	ui.Info("Restoring binary...")
@@ -331,7 +345,9 @@ func runRollback(cmd *cobra.Command, args []string) error {
 		copyFile(failsafe, exe)
 		return fmt.Errorf("failed to restore binary: %w", err)
 	}
-	os.Chmod(exe, 0755)
+	if err := os.Chmod(exe, 0755); err != nil {
+		return fmt.Errorf("set executable permissions: %w", err)
+	}
 
 	// Update metadata
 	installMeta := map[string]string{
@@ -347,7 +363,11 @@ func runRollback(cmd *cobra.Command, args []string) error {
 		"repo_name":     config.RepoName,
 	}
 	if b, err := json.MarshalIndent(installMeta, "", "  "); err == nil {
-		os.WriteFile(filepath.Join(filesystem.AgentPath(driveRoot), "install.json"), b, 0644)
+		if err := os.WriteFile(filepath.Join(filesystem.AgentPath(driveRoot), "install.json"), b, 0644); err != nil {
+			return fmt.Errorf("write install metadata: %w", err)
+		}
+	} else {
+		return fmt.Errorf("encode install metadata: %w", err)
 	}
 
 	fmt.Println()
@@ -399,7 +419,7 @@ func fetchReleaseMetadata(targetVersion string) (githubRelease, string, error) {
 }
 
 func fetchRelease(url string) (githubRelease, int, error) {
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return githubRelease{}, 0, fmt.Errorf("fetch release metadata: %w", err)
 	}
@@ -417,7 +437,7 @@ func fetchRelease(url string) (githubRelease, int, error) {
 }
 
 func fetchReleases(url string) ([]githubRelease, int, error) {
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return nil, 0, fmt.Errorf("fetch releases metadata: %w", err)
 	}
@@ -446,11 +466,17 @@ func firstUsableRelease(releases []githubRelease) (githubRelease, bool) {
 func listBackups(backupsDir string) ([]string, error) {
 	entries, err := os.ReadDir(backupsDir)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("read backups: %w", err)
 	}
 
 	var backups []string
 	for _, e := range entries {
+		if e.Type()&os.ModeSymlink != 0 {
+			continue
+		}
 		if !e.IsDir() && strings.HasPrefix(e.Name(), "drive-agent-") {
 			backups = append(backups, e.Name())
 		}
@@ -460,7 +486,7 @@ func listBackups(backupsDir string) ([]string, error) {
 }
 
 func downloadString(url string) (string, error) {
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return "", err
 	}
@@ -473,7 +499,7 @@ func downloadString(url string) (string, error) {
 }
 
 func downloadFile(url, dest string) error {
-	resp, err := http.Get(url)
+	resp, err := httpClient.Get(url)
 	if err != nil {
 		return err
 	}
@@ -559,11 +585,9 @@ func determineAssetName(osName, archName string) (string, error) {
 
 func parseChecksums(data, assetName string) (string, error) {
 	for _, line := range strings.Split(data, "\n") {
-		if strings.Contains(line, assetName) {
-			fields := strings.Fields(line)
-			if len(fields) > 0 {
-				return fields[0], nil
-			}
+		fields := strings.Fields(line)
+		if len(fields) >= 2 && filepath.Base(fields[len(fields)-1]) == assetName {
+			return fields[0], nil
 		}
 	}
 	return "", fmt.Errorf("checksum for %s not found in checksums.txt", assetName)
@@ -588,6 +612,9 @@ func extractZip(archivePath, destPath string) error {
 			// Anti path-traversal check
 			if strings.Contains(f.Name, "..") {
 				return fmt.Errorf("invalid path in zip: %s", f.Name)
+			}
+			if f.FileInfo().Mode()&os.ModeSymlink != 0 {
+				return fmt.Errorf("refusing symlink in zip: %s", f.Name)
 			}
 
 			rc, err := f.Open()

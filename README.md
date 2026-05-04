@@ -32,7 +32,7 @@ drive-agent status
 drive-agent doctor
 ```
 
-*(Placeholder: A single-line curl script for GitHub release installs will be provided after the first public release).*
+Prebuilt alpha release artifacts are available on GitHub. For now, prefer downloading the matching archive manually, verifying `checksums.txt`, and installing with `install.sh --binary`.
 
 ## Updates and Rollback
 
@@ -82,7 +82,7 @@ rm /tmp/DriveAgentTest.dmg
 - **git push-all**: Intentionally not implemented (safety requirement).
 - **Disk space reporting**: `status` doesn't show free/used disk space natively.
 - **Shell config**: `install.sh` handles bash/zsh; fish support is pending.
-- **Cross-platform**: macOS-first. Windows/Linux paths and managers are scaffolded but untested.
+- **Cross-platform**: Release artifacts are published for macOS, Linux, and Windows, but the safety model and fake-drive workflows are macOS-first.
 
 ## Documentation
 
@@ -121,8 +121,8 @@ rm /tmp/DriveAgentTest.dmg
 |---------|-------------|
 | `drive-agent project add` | Add a project (interactive or flags) |
 | `drive-agent project list` | List projects |
-| `drive-agent project path <org/project>` | Print project path |
-| `drive-agent project open <org/project>` | Open in editor |
+| `drive-agent project path <project\|org/project>` | Print project path |
+| `drive-agent project open <project\|org/project>` | Open in editor |
 | `drive-agent project reindex` | Rebuild database from manifests |
 
 ### Host Setup
@@ -144,6 +144,8 @@ rm /tmp/DriveAgentTest.dmg
 ### Cleanup
 | Command | Description |
 |---------|-------------|
+| `drive-agent cleanup --dry-run` | Show cleanup plan |
+| `drive-agent cleanup --apply` | Delete targets (with confirmation) |
 | `drive-agent cleanup scan` | Scan for removable build artifacts |
 | `drive-agent cleanup dry-run` | Show cleanup plan |
 | `drive-agent cleanup apply` | Delete targets (with confirmation) |
@@ -224,7 +226,7 @@ See [docs/safety.md](docs/safety.md) for the full safety model.
 - Git push-all is not implemented (requires explicit confirmation in future)
 - Host setup never installs without consent
 - No silent `sudo` or `curl | bash`
-- Shell config edits create timestamped backups with marked blocks
+- Shell config edits create backups with marked blocks
 
 ## License
 

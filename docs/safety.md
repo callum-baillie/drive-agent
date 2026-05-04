@@ -15,8 +15,8 @@ Drive Agent is designed with safety as the top priority. No destructive operatio
 
 ## Cleanup Safety
 
-- **Defaults to dry-run** — `cleanup scan` and `cleanup dry-run` show what would be deleted
-- **Requires `cleanup apply`** for actual deletion
+- **Defaults to dry-run** — `cleanup`, `cleanup --dry-run`, `cleanup scan`, and `cleanup dry-run` show what would be deleted
+- **Requires `cleanup --apply` or `cleanup apply`** for actual deletion
 - **Never deletes outside the drive root** — every path is validated with `IsPathInsideDrive()`
 - **Never follows symlinks** — symlinked targets are skipped
 - **Rejects suspicious paths** — paths containing `..` are refused
@@ -27,7 +27,7 @@ Drive Agent is designed with safety as the top priority. No destructive operatio
 - **`git push-all` is not implemented** — too dangerous for automatic use
 - `git pull-all` skips dirty repos and detached HEAD by default
 - `git fetch-all` is safe (read-only operation)
-- All commands support `--dry-run`
+- Mutating git commands support `--dry-run`
 
 ## Host Setup Safety
 
@@ -35,7 +35,7 @@ Drive Agent is designed with safety as the top priority. No destructive operatio
 - **Never runs `sudo` silently** — requires user awareness
 - **Never runs `curl | bash` silently** — native installers require `requiresExplicitApproval`
 - Shell config edits:
-  - Create timestamped backup before modification (`.zshrc.drive-agent-backup-2026-05-03`)
+  - Create a backup before modification (`.zshrc.drive-agent-backup` or installer-created dated backup)
   - Use marked blocks (`# >>> drive-agent >>>` / `# <<< drive-agent <<<`)
   - Can be identified and removed later
 - Supports `--dry-run` to preview all changes

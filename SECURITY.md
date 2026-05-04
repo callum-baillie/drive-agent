@@ -4,7 +4,7 @@
 
 Please do **NOT** report security vulnerabilities via public GitHub Issues or Discussions.
 
-Send an email to: **Security contact: TODO before public release**
+Security contact is still being finalized for the alpha. Until then, use GitHub's private vulnerability reporting flow if it is enabled for the repository, or contact the maintainer out of band before publishing details.
 
 Include a description of the vulnerability, the steps to reproduce it, and any potential impact. We will try to address it as soon as possible.
 

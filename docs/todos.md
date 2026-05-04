@@ -67,3 +67,30 @@ show the remote and branch before each push, and default to `--dry-run`.
 
 Track which projects use which local ports (e.g., 3000, 5432, 8080) in the database
 to prevent conflicts when running multiple projects simultaneously.
+
+---
+
+### [TODO-008] Centralize canonical path safety for `install.sh`
+
+The Go CLI resolves symlinks and blocks protected paths in `internal/utils/safety.go`.
+`install.sh` has its own shell-level checks for early install safety, but it should be
+refactored to share or invoke the same canonical validation logic before copying
+binaries or editing shell profiles.
+
+---
+
+### [TODO-009] Add contexts/timeouts around external command execution
+
+Git, editor, and package-manager calls currently use `os/exec` without command
+contexts. Add bounded timeouts or cancellation for long-running commands while
+preserving interactive package install behavior where user input may be required.
+
+---
+
+### [TODO-010] Replace cleanup's broad `..` substring check with component-aware validation
+
+Cleanup already validates targets against the resolved drive root and skips
+symlinks. The extra `strings.Contains(cleanPath, "..")` guard is conservative
+and may reject legitimate names containing two dots. Replace it with
+component-aware traversal detection or remove it after equivalent tests prove
+the drive-boundary checks cover the intended risk.

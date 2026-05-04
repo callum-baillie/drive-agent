@@ -5,7 +5,10 @@
 ```bash
 drive-agent version                                 # Show version
 drive-agent --version                               # Show version
+drive-agent self version                            # Show version, install path, and drive root
 ```
+
+Most commands that operate on an initialized drive accept the global `--path <drive-root>` flag. Without it, Drive Agent searches upward from the current directory for `.drive-agent/DRIVE_AGENT_ROOT`.
 
 ## drive-agent init
 
@@ -53,6 +56,7 @@ drive-agent project add --org company --name api --git git@github.com:co/api.git
 drive-agent project list                            # List all projects
 drive-agent project list --org personal             # Filter by org
 drive-agent project list --tag nextjs               # Filter by tag
+drive-agent project path my-app                     # Print path if project slug is unique
 drive-agent project path personal/my-app            # Print path
 drive-agent project open personal/my-app            # Open in editor
 drive-agent project open personal/my-app --editor cursor
@@ -90,6 +94,10 @@ drive-agent git pull-all --dry-run                  # Preview
 ## drive-agent cleanup
 
 ```bash
+drive-agent cleanup                                 # Scan for targets
+drive-agent cleanup --dry-run                       # Scan for targets
+drive-agent cleanup --apply                         # Delete targets
+drive-agent cleanup --apply --yes                   # Skip confirmation
 drive-agent cleanup scan                            # Scan for targets
 drive-agent cleanup dry-run                         # Same as scan
 drive-agent cleanup apply                           # Delete targets

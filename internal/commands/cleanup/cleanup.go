@@ -22,11 +22,35 @@ type cleanupTarget struct {
 }
 
 func NewCmd() *cobra.Command {
-	cmd := &cobra.Command{Use: "cleanup", Short: "Scan and clean build artifacts"}
+	cmd := &cobra.Command{
+		Use:   "cleanup",
+		Short: "Scan and clean build artifacts",
+		Long: `Scan and clean generated build artifacts inside managed project directories.
+
+By default this command only scans. Use --apply or the apply subcommand to
+delete targets after confirmation.`,
+		RunE: runCleanup,
+	}
+	cmd.Flags().Bool("dry-run", false, "Show cleanup plan without deleting (default)")
+	cmd.Flags().Bool("apply", false, "Delete cleanup targets after confirmation")
+	cmd.Flags().Bool("yes", false, "Skip confirmation when used with --apply")
+	cmd.Flags().String("org", "", "Filter by org")
 	cmd.AddCommand(newScanCmd())
 	cmd.AddCommand(newApplyCmd())
 	cmd.AddCommand(newDryRunCmd())
 	return cmd
+}
+
+func runCleanup(cmd *cobra.Command, args []string) error {
+	apply, _ := cmd.Flags().GetBool("apply")
+	dryRun, _ := cmd.Flags().GetBool("dry-run")
+	if dryRun {
+		return runScan(cmd, args)
+	}
+	if apply {
+		return runApply(cmd, args)
+	}
+	return runScan(cmd, args)
 }
 
 func newScanCmd() *cobra.Command {

@@ -4,13 +4,39 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/callum-baillie/drive-agent/internal/config"
 )
 
+var (
+	driveRootOverrideMu sync.RWMutex
+	driveRootOverride   string
+)
+
+// SetDriveRootOverride sets the CLI-level drive root override used when
+// commands call FindDriveRoot with an empty starting path.
+func SetDriveRootOverride(path string) {
+	driveRootOverrideMu.Lock()
+	defer driveRootOverrideMu.Unlock()
+	driveRootOverride = path
+}
+
+func getDriveRootOverride() string {
+	driveRootOverrideMu.RLock()
+	defer driveRootOverrideMu.RUnlock()
+	return driveRootOverride
+}
+
 // FindDriveRoot walks upward from the given path to find a .drive-agent directory.
 // If path is empty, it uses the current working directory.
 func FindDriveRoot(fromPath string) (string, error) {
+	if fromPath == "" {
+		if override := getDriveRootOverride(); override != "" {
+			fromPath = override
+		}
+	}
+
 	if fromPath == "" {
 		var err error
 		fromPath, err = os.Getwd()

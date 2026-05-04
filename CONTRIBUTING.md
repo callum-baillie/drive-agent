@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Drive Agent!
 
 ## Local Setup
 
-To build and test Drive Agent locally, you will need Go 1.21+ installed and CGO enabled (since we use go-sqlite3).
+To build and test Drive Agent locally, you will need Go 1.25+ installed. Drive Agent uses the pure-Go `modernc.org/sqlite` driver, so release builds do not require CGO.
 
 ```bash
 # Clone the repo

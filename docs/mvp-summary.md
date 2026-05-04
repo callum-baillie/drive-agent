@@ -26,7 +26,7 @@ Built a complete MVP of the Drive Agent CLI tool in Go. The project compiles, al
 | `internal/commands/git` | `git.go` | status-all, fetch-all, pull-all |
 | `internal/commands/cleanup` | `cleanup.go` | scan, dry-run, apply |
 | `internal/commands/backup` | `backup.go` | Backup stubs with guided instructions |
-| `internal/commands/self` | `self.go` | Self-update stubs |
+| `internal/commands/self` | `self.go` | Self-update and rollback |
 | `internal/config` | `config.go` | Types, constants, layout definitions |
 | `internal/db` | `db.go`, `organizations.go`, `projects.go`, `hosts.go` | SQLite database layer |
 | `internal/filesystem` | `paths.go` | Path resolution, drive root detection |

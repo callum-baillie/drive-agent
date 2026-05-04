@@ -64,6 +64,9 @@ func runProjectAdd(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("project name is required")
 		}
 	}
+	if clone && gitRemote == "" {
+		return fmt.Errorf("--clone requires --git <remote-url>")
+	}
 
 	slug := utils.Slugify(name)
 
@@ -192,7 +195,7 @@ func runProjectList(cmd *cobra.Command, args []string) error {
 
 func newProjectPathCmd() *cobra.Command {
 	return &cobra.Command{
-		Use: "path <org/project>", Short: "Print project path",
+		Use: "path <project|org/project>", Short: "Print project path",
 		Args: cobra.ExactArgs(1), RunE: runProjectPath,
 	}
 }
@@ -202,19 +205,15 @@ func runProjectPath(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	orgSlug, projSlug, err := parseProjectRef(args[0])
-	if err != nil {
-		return err
-	}
 	database, err := db.Open(filesystem.DBPath(driveRoot))
 	if err != nil {
 		return err
 	}
 	defer database.Close()
 
-	p, err := database.GetProjectBySlug(orgSlug, projSlug)
+	p, err := getProjectByRef(database, args[0])
 	if err != nil {
-		return fmt.Errorf("project not found: %s/%s", orgSlug, projSlug)
+		return err
 	}
 	fmt.Println(p.Path)
 	return nil
@@ -222,7 +221,7 @@ func runProjectPath(cmd *cobra.Command, args []string) error {
 
 func newProjectOpenCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "open <org/project>", Short: "Open project in editor",
+		Use: "open <project|org/project>", Short: "Open project in editor",
 		Args: cobra.ExactArgs(1), RunE: runProjectOpen,
 	}
 	cmd.Flags().String("editor", "", "Editor command (default: cursor, code)")
@@ -235,10 +234,6 @@ func runProjectOpen(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	editor, _ := cmd.Flags().GetString("editor")
-	orgSlug, projSlug, err := parseProjectRef(args[0])
-	if err != nil {
-		return err
-	}
 
 	database, err := db.Open(filesystem.DBPath(driveRoot))
 	if err != nil {
@@ -246,9 +241,9 @@ func runProjectOpen(cmd *cobra.Command, args []string) error {
 	}
 	defer database.Close()
 
-	p, err := database.GetProjectBySlug(orgSlug, projSlug)
+	p, err := getProjectByRef(database, args[0])
 	if err != nil {
-		return fmt.Errorf("project not found: %s/%s", orgSlug, projSlug)
+		return err
 	}
 
 	// Detect editor
@@ -426,7 +421,44 @@ func runProjectReindex(cmd *cobra.Command, args []string) error {
 func parseProjectRef(ref string) (orgSlug, projectSlug string, err error) {
 	parts := strings.SplitN(ref, "/", 2)
 	if len(parts) != 2 {
-		return "", "", fmt.Errorf("use format: org/project (e.g. personal/my-app)")
+		return "", "", fmt.Errorf("use format: project or org/project (e.g. my-app or personal/my-app)")
 	}
 	return parts[0], parts[1], nil
+}
+
+func getProjectByRef(database *db.DB, ref string) (*db.Project, error) {
+	if strings.Contains(ref, "/") {
+		orgSlug, projSlug, err := parseProjectRef(ref)
+		if err != nil {
+			return nil, err
+		}
+		p, err := database.GetProjectBySlug(orgSlug, projSlug)
+		if err != nil {
+			return nil, fmt.Errorf("project not found: %s/%s", orgSlug, projSlug)
+		}
+		return p, nil
+	}
+
+	projects, err := database.ListProjects("", "")
+	if err != nil {
+		return nil, fmt.Errorf("list projects: %w", err)
+	}
+
+	var matches []*db.Project
+	for _, p := range projects {
+		if p.Slug == ref || p.Name == ref {
+			matches = append(matches, p)
+		}
+	}
+	if len(matches) == 0 {
+		return nil, fmt.Errorf("project not found: %s", ref)
+	}
+	if len(matches) > 1 {
+		var refs []string
+		for _, p := range matches {
+			refs = append(refs, p.OrgSlug+"/"+p.Slug)
+		}
+		return nil, fmt.Errorf("project %q is ambiguous; use org/project (%s)", ref, strings.Join(refs, ", "))
+	}
+	return matches[0], nil
 }
