@@ -136,17 +136,58 @@ func ShellBlock(content string) string {
 	return fmt.Sprintf("%s\n%s\n%s", shellBlockStart, content, shellBlockEnd)
 }
 
+// ShellBlockOptions controls optional drive-agent shell exports.
+type ShellBlockOptions struct {
+	NpmCachePath      string
+	BunCachePath      string
+	HomebrewCachePath string
+	ContainerDataPath string
+	DockerCachePath   string
+}
+
+// ShellQuote returns a POSIX-shell-safe single-quoted value.
+func ShellQuote(value string) string {
+	if value == "" {
+		return "''"
+	}
+	return "'" + strings.ReplaceAll(value, "'", "'\"'\"'") + "'"
+}
+
 // ShellBlockContent returns the standard drive-agent shell configuration.
 func ShellBlockContent(driveRoot string) string {
+	return ShellBlockContentWithOptions(driveRoot, ShellBlockOptions{})
+}
+
+// ShellBlockContentWithOptions returns the standard drive-agent shell
+// configuration plus optional cache/storage exports.
+func ShellBlockContentWithOptions(driveRoot string, options ShellBlockOptions) string {
 	binPath := filepath.Join(driveRoot, ".drive-agent", "bin")
 	lines := []string{
-		fmt.Sprintf(`export PATH="%s:$PATH"`, binPath),
+		fmt.Sprintf(`export PATH=%s:"$PATH"`, ShellQuote(binPath)),
 		`alias da="drive-agent"`,
 		`alias drive="drive-agent"`,
 		``,
 		`# drive-agent shell helpers`,
 		`da-cd() { cd "$(drive-agent project path "$1")" ; }`,
 		`da-open() { drive-agent project open "$1" ; }`,
+	}
+	if options.NpmCachePath != "" || options.BunCachePath != "" || options.HomebrewCachePath != "" || options.ContainerDataPath != "" || options.DockerCachePath != "" {
+		lines = append(lines, "", "# drive-agent portable cache and container roots")
+	}
+	if options.NpmCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export npm_config_cache=%s", ShellQuote(options.NpmCachePath)))
+	}
+	if options.BunCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export BUN_INSTALL_CACHE_DIR=%s", ShellQuote(options.BunCachePath)))
+	}
+	if options.HomebrewCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export HOMEBREW_CACHE=%s", ShellQuote(options.HomebrewCachePath)))
+	}
+	if options.ContainerDataPath != "" {
+		lines = append(lines, fmt.Sprintf("export DRIVE_AGENT_CONTAINER_DATA=%s", ShellQuote(options.ContainerDataPath)))
+	}
+	if options.DockerCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export DRIVE_AGENT_DOCKER_BUILD_CACHE=%s", ShellQuote(options.DockerCachePath)))
 	}
 	return strings.Join(lines, "\n")
 }

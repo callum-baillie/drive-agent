@@ -50,6 +50,7 @@ var DriveLayout = []string{
 var AgentLayout = []string{
 	"bin",
 	"config",
+	"config/host-profiles",
 	"db",
 	"logs",
 	"logs/host-setup",
@@ -107,15 +108,21 @@ type DriveConfig struct {
 
 // ProjectManifestData represents the .drive-project.toml file.
 type ProjectManifestData struct {
-	ID             string   `toml:"id"`
-	Name           string   `toml:"name"`
-	Slug           string   `toml:"slug"`
-	Org            string   `toml:"org"`
-	Type           string   `toml:"type"`
-	PackageManager string   `toml:"package_manager"`
-	Tags           []string `toml:"tags"`
-	GitRemote      string   `toml:"git_remote"`
-	CreatedAt      string   `toml:"created_at"`
+	ID             string              `toml:"id"`
+	Name           string              `toml:"name"`
+	Slug           string              `toml:"slug"`
+	Org            string              `toml:"org"`
+	Type           string              `toml:"type"`
+	PackageManager string              `toml:"package_manager"`
+	Tags           []string            `toml:"tags"`
+	GitRemote      string              `toml:"git_remote"`
+	CreatedAt      string              `toml:"created_at"`
+	Backup         ProjectBackupConfig `toml:"backup,omitempty"`
+}
+
+// ProjectBackupConfig contains project-local backup behavior.
+type ProjectBackupConfig struct {
+	Excludes []string `toml:"excludes,omitempty"`
 }
 
 // HostInfo represents detected host information.
@@ -138,6 +145,7 @@ type HostProfile struct {
 	Packages        ProfilePackages        `json:"packages"`
 	Shell           ProfileShell           `json:"shell"`
 	Caches          ProfileCaches          `json:"caches"`
+	Docker          ProfileDocker          `json:"docker"`
 	Safety          ProfileSafety          `json:"safety"`
 }
 
@@ -168,13 +176,31 @@ type ProfileShell struct {
 
 // ProfileCaches defines cache configuration preferences.
 type ProfileCaches struct {
-	ConfigurePnpmStore bool `json:"configurePnpmStore"`
-	ConfigureNpmCache  bool `json:"configureNpmCache"`
-	ConfigureBunCache  bool `json:"configureBunCache"`
+	Mode                     string `json:"mode,omitempty"`
+	AllowExternalDriveCaches bool   `json:"allowExternalDriveCaches,omitempty"`
+	AllowDisableCaches       bool   `json:"allowDisableCaches,omitempty"`
+	ExternalDriveRoot        string `json:"externalDriveRoot,omitempty"`
+	NpmCachePath             string `json:"npmCachePath,omitempty"`
+	PnpmStorePath            string `json:"pnpmStorePath,omitempty"`
+	BunCachePath             string `json:"bunCachePath,omitempty"`
+	HomebrewCachePath        string `json:"homebrewCachePath,omitempty"`
+	ConfigurePnpmStore       bool   `json:"configurePnpmStore"`
+	ConfigureNpmCache        bool   `json:"configureNpmCache"`
+	ConfigureBunCache        bool   `json:"configureBunCache"`
+}
+
+// ProfileDocker defines container storage preferences.
+type ProfileDocker struct {
+	Mode                           string `json:"mode,omitempty"`
+	AllowExternalDriveStorage      bool   `json:"allowExternalDriveStorage,omitempty"`
+	ExternalDataRoot               string `json:"externalDataRoot,omitempty"`
+	ExternalBuildCacheRoot         string `json:"externalBuildCacheRoot,omitempty"`
+	DoNotModifyWithoutConfirmation bool   `json:"doNotModifyWithoutConfirmation,omitempty"`
 }
 
 // ProfileSafety defines safety preferences.
 type ProfileSafety struct {
+	DryRunFirst           bool `json:"dryRunFirst"`
 	DryRun                bool `json:"dryRun"`
 	RequireConfirmation   bool `json:"requireConfirmation"`
 	AllowSudo             bool `json:"allowSudo"`

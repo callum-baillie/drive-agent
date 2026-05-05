@@ -20,8 +20,10 @@ drive-agent/
 │   │   ├── host/                # Host setup and packages
 │   │   ├── git/                 # Git bulk operations
 │   │   ├── cleanup/             # Build artifact cleanup
-│   │   ├── backup/              # Backup utilities (stub)
+│   │   ├── backup/              # Backup command wiring
 │   │   └── self/                # Self-update and rollback
+│   ├── backup/                   # Backup provider/config/safety/state
+│   │   └── restic/              # Restic CLI provider
 │   ├── config/                   # Types, constants, layout definitions
 │   ├── db/                       # SQLite database layer
 │   ├── filesystem/               # Path resolution, directory ops
@@ -66,4 +68,9 @@ User Command → Cobra CLI → Command Handler → DB/Filesystem/Shell → Outpu
 Package installs:
 ```
 Catalog → Provider Registry → Best Available Provider → Shell Exec → Log
+```
+
+Backups:
+```
+Backup command → Backup config/state → Provider abstraction → Restic CLI → Logs/state
 ```

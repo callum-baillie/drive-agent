@@ -34,6 +34,12 @@ Drive Agent is designed with safety as the top priority. No destructive operatio
 - **Never installs without explicit consent**
 - **Never runs `sudo` silently** — requires user awareness
 - **Never runs `curl | bash` silently** — native installers require `requiresExplicitApproval`
+- Profile setup supports cache modes:
+  - `host-local` leaves package-manager caches unchanged
+  - `external-drive` shows planned npm, pnpm, Bun, and Homebrew cache paths
+  - `disabled` makes no cache config changes and deletes nothing
+- Docker storage setup prefers external bind-mount roots over daemon relocation
+- Drive Agent does not edit Docker Desktop or OrbStack daemon storage automatically
 - Shell config edits:
   - Create a backup before modification (`.zshrc.drive-agent-backup` or installer-created dated backup)
   - Use marked blocks (`# >>> drive-agent >>>` / `# <<< drive-agent <<<`)
@@ -55,3 +61,15 @@ Drive Agent is designed with safety as the top priority. No destructive operatio
 - Install plan is always shown before execution
 - Category and individual package selection are both supported
 - `--dry-run` shows exact commands without running them
+
+## Backup Safety
+
+- Restic passwords are never stored in Drive Agent config, state, logs, or DB records
+- S3 access keys must be provided through the current shell environment or a local secret manager, never through docs, config, manifests, logs, or SQLite
+- Supported password sources are `RESTIC_PASSWORD` and `RESTIC_PASSWORD_FILE`
+- Project-level excludes are stored in `.drive-project.toml` and scoped to that project path in the generated Restic exclude file
+- Local repositories inside the source drive are rejected unless `--allow-same-drive-repo` is passed
+- Same-drive repositories print a warning that they are not real backups
+- Restore refuses active-drive targets and protected system paths
+- Restore never deletes target contents automatically
+- `backup check` uses `restic check`; expensive full data checks are not the default

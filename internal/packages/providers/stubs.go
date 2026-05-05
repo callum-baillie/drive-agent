@@ -9,12 +9,12 @@ type StubProvider struct {
 	supportedOS []string
 }
 
-func (s *StubProvider) ID() string              { return s.id }
-func (s *StubProvider) Name() string            { return s.name }
-func (s *StubProvider) SupportedOS() []string   { return s.supportedOS }
-func (s *StubProvider) IsAvailable() bool       { return false }
-func (s *StubProvider) ManagerPath() string     { return "" }
-func (s *StubProvider) ManagerVersion() string  { return "" }
+func (s *StubProvider) ID() string                     { return s.id }
+func (s *StubProvider) Name() string                   { return s.name }
+func (s *StubProvider) SupportedOS() []string          { return s.supportedOS }
+func (s *StubProvider) IsAvailable() bool              { return false }
+func (s *StubProvider) ManagerPath() string            { return "" }
+func (s *StubProvider) ManagerVersion() string         { return "" }
 func (s *StubProvider) IsPackageInstalled(string) bool { return false }
 
 func (s *StubProvider) InstallManager(dryRun bool) (string, error) {
@@ -40,12 +40,6 @@ func stubProviders() []*StubProvider {
 		{id: "pacman", name: "pacman", supportedOS: []string{"linux"}},
 		{id: "zypper", name: "zypper", supportedOS: []string{"linux"}},
 		{id: "apk", name: "apk", supportedOS: []string{"linux"}},
-		{id: "pnpm", name: "pnpm (global)", supportedOS: []string{"darwin", "linux", "windows"}},
-		{id: "bun", name: "bun", supportedOS: []string{"darwin", "linux", "windows"}},
-		{id: "uv", name: "uv", supportedOS: []string{"darwin", "linux", "windows"}},
-		{id: "pipx", name: "pipx", supportedOS: []string{"darwin", "linux", "windows"}},
-		{id: "cargo", name: "cargo", supportedOS: []string{"darwin", "linux", "windows"}},
-		{id: "go-install", name: "go install", supportedOS: []string{"darwin", "linux", "windows"}},
 		{id: "mise", name: "mise", supportedOS: []string{"darwin", "linux"}},
 		{id: "asdf", name: "asdf", supportedOS: []string{"darwin", "linux"}},
 		{id: "nix", name: "Nix", supportedOS: []string{"darwin", "linux"}},

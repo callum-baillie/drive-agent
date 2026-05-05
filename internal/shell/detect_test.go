@@ -130,3 +130,23 @@ func TestShellBlock_ContainsMarkers(t *testing.T) {
 		t.Error("block missing content")
 	}
 }
+
+func TestShellBlockContent_QuotesDrivePathsWithSpaces(t *testing.T) {
+	content := ShellBlockContentWithOptions("/Volumes/External SSD", ShellBlockOptions{
+		NpmCachePath:      "/Volumes/External SSD/Caches/npm",
+		HomebrewCachePath: "/Volumes/External SSD/Caches/homebrew",
+		ContainerDataPath: "/Volumes/External SSD/DevData/containers",
+	})
+
+	expected := []string{
+		`export PATH='/Volumes/External SSD/.drive-agent/bin':"$PATH"`,
+		`export npm_config_cache='/Volumes/External SSD/Caches/npm'`,
+		`export HOMEBREW_CACHE='/Volumes/External SSD/Caches/homebrew'`,
+		`export DRIVE_AGENT_CONTAINER_DATA='/Volumes/External SSD/DevData/containers'`,
+	}
+	for _, want := range expected {
+		if !strings.Contains(content, want) {
+			t.Fatalf("shell block missing %q in:\n%s", want, content)
+		}
+	}
+}

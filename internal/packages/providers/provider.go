@@ -51,6 +51,12 @@ func NewRegistry() *Registry {
 	r.Register(&Homebrew{})
 	r.Register(&HomebrewCask{})
 	r.Register(&NpmGlobal{})
+	r.Register(&PnpmGlobal{})
+	r.Register(&BunGlobal{})
+	r.Register(&Pipx{})
+	r.Register(&UvTool{})
+	r.Register(&CargoInstall{})
+	r.Register(&GoInstall{})
 
 	// Register stub providers for future implementation
 	for _, stub := range stubProviders() {

@@ -28,13 +28,13 @@ does not delete them. A future `--repair` flag should offer to prune stale entri
 
 ---
 
-### [TODO-003] Full backup provider implementation (restic adapter)
+### [TODO-003] Backup provider expansion and scheduling
 
-See `docs/backup.md` for the manual setup guide. The restic adapter should:
-1. Wrap `restic init`, `restic backup`, `restic check`, `restic snapshots`
-2. Store repo config in `.drive-agent/config/backup.toml`
-3. Support multiple backup targets (local, S3, Backblaze B2, rclone)
-4. Create a LaunchAgent (macOS) or systemd unit (Linux) for scheduled backups
+Restic is implemented as the first provider. Future backup work should:
+1. Add managed schedules with LaunchAgent (macOS) or systemd timers (Linux)
+2. Add additional provider adapters where useful (kopia, rclone, rsync, Time Machine)
+3. Add secret-manager integrations for macOS Keychain, 1Password, Doppler, and similar tools
+4. Add richer repository health metrics and retention/prune policy management
 
 ---
 
@@ -53,6 +53,17 @@ Future work:
 
 Use `github.com/charmbracelet/bubbletea` for a checkbox-based package selector.
 The current implementation uses simple readline prompts.
+
+---
+
+### [TODO-011] First-class host profile generator
+
+Host setup can consume drive-local profiles, but profile generation is still a
+manual audit-and-normalize workflow. Add a read-only command such as
+`drive-agent host profile generate --name <name> --dry-run` that audits safe
+developer package sources, maps them through the package catalog, reports
+normalization decisions, and writes to `.drive-agent/config/host-profiles/`
+only after confirmation.
 
 ---
 

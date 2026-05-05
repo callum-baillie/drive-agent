@@ -9,6 +9,7 @@
 - 🚀 **Portable Dev Environment:** Move your code between machines instantly.
 - 📦 **Host Setup:** Automatically install tools (Homebrew, npm, Node, Docker) on a new host based on profiles.
 - 🧹 **Idempotent Cleanup:** Safely reclaim space by scanning for `node_modules`, `dist`, `.next`, etc.
+- 💾 **Restic Backups:** Initialize, run, inspect, check, and restore encrypted Restic backups.
 - 🔄 **Self-Update:** Securely update the agent in-place via GitHub releases.
 - 🛡️ **Safety-First:** Strict validation prevents destructive operations outside the drive root.
 
@@ -32,7 +33,49 @@ drive-agent status
 drive-agent doctor
 ```
 
+## Backup Quick Start
+
+Use a separate backup destination. Do not put the Restic repo on the same drive you are backing up.
+
+```bash
+drive-agent host packages install restic
+drive-agent backup init --provider restic --repo /Volumes/BackupDrive/restic/devdrive
+
+# Do not put the password directly in shell history.
+read -s RESTIC_PASSWORD
+export RESTIC_PASSWORD
+
+drive-agent backup run
+drive-agent backup snapshots
+drive-agent backup check
+```
+
+Project manifests can carry project-scoped backup excludes, including Restic wildcards:
+
+```bash
+drive-agent backup excludes add --project personal/my-app 'apps/*/node_modules'
+drive-agent backup excludes list --project personal/my-app
+```
+
+Before trusting any backup, perform a restore test to a separate target:
+
+```bash
+drive-agent backup restore --snapshot latest --target /Volumes/RestoreTest --dry-run
+drive-agent backup restore --snapshot latest --target /Volumes/RestoreTest
+```
+
 Prebuilt alpha release artifacts are available on GitHub. For now, prefer downloading the matching archive manually, verifying `checksums.txt`, and installing with `install.sh --binary`.
+
+## Portable Host Profiles
+
+Drive Agent can keep reusable host setup profiles on the external drive:
+
+```bash
+drive-agent host setup --path /Volumes/DevDrive --profile mac-mini --dry-run
+drive-agent host setup --path /Volumes/DevDrive --profile mac-mini
+```
+
+Drive-local profiles live in `.drive-agent/config/host-profiles/`. A profile can plan host package installs, shell aliases, optional external package caches, and external Docker/container bind-mount roots. It does not copy secrets, logins, license state, app settings, SSH keys, browser profiles, private keychains, or credentials.
 
 ## Updates and Rollback
 
@@ -75,8 +118,8 @@ rm /tmp/DriveAgentTest.dmg
 
 ## Known Limitations
 
-- **Package managers**: Only Homebrew, Homebrew Cask, and npm global are fully implemented. Other managers are scaffolded as stub providers.
-- **Backup**: Commands exist but print guided setup instructions rather than executing backups automatically.
+- **Package managers**: Homebrew, Homebrew Cask, npm, pnpm, bun, pipx, uv, cargo, and `go install` providers can produce install plans. Homebrew and app casks remain the preferred source for stable host tools and GUI apps.
+- **Backup**: Restic is implemented as the first provider. Other providers and scheduled backups are future work.
 - **Self-update**: Requires the `callum-baillie/drive-agent` repository to have a tagged GitHub Release with GoReleaser artifacts.
 - **Interactive host setup**: Uses simple terminal prompts, not a rich TUI selector with checkboxes.
 - **git push-all**: Intentionally not implemented (safety requirement).
@@ -87,6 +130,10 @@ rm /tmp/DriveAgentTest.dmg
 ## Documentation
 
 - [Installation Guide](docs/install.md)
+- [Host Setup](docs/host-setup.md)
+- [Backups](docs/backup.md)
+- [Restic Backup Provider](docs/backup-restic.md)
+- [Restore Guide](docs/backup-restore.md)
 - [Self Update & Rollback](docs/self-update.md)
 - [Fake Drive Testing](docs/fake-drive-testing.md)
 - [Release Process](docs/release-process.md)
@@ -150,13 +197,17 @@ rm /tmp/DriveAgentTest.dmg
 | `drive-agent cleanup dry-run` | Show cleanup plan |
 | `drive-agent cleanup apply` | Delete targets (with confirmation) |
 
-### Backup (Stubs)
+### Backup
 | Command | Description |
 |---------|-------------|
-| `drive-agent backup status` | Show backup tool availability |
-| `drive-agent backup init` | Initialize backup (planned) |
-| `drive-agent backup run` | Run backup (planned) |
-| `drive-agent backup check` | Verify backup (planned) |
+| `drive-agent backup init` | Initialize Restic backup config/repo |
+| `drive-agent backup status` | Show backup status and warnings |
+| `drive-agent backup run` | Run a Restic backup |
+| `drive-agent backup snapshots` | List snapshots |
+| `drive-agent backup check` | Verify repository metadata |
+| `drive-agent backup restore` | Restore to a safe target |
+| `drive-agent backup excludes list` | List exclude patterns |
+| `drive-agent backup doctor` | Diagnose backup readiness |
 
 ### Self-Management
 | Command | Description |
@@ -225,6 +276,8 @@ See [docs/safety.md](docs/safety.md) for the full safety model.
 - Cleanup never follows symlinks
 - Git push-all is not implemented (requires explicit confirmation in future)
 - Host setup never installs without consent
+- Backups never store Restic passwords in config, state, DB, or logs
+- Restore refuses active-drive and protected system paths by default
 - No silent `sudo` or `curl | bash`
 - Shell config edits create backups with marked blocks
 

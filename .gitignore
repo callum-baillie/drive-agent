@@ -30,6 +30,7 @@ node_modules/
 
 # Agent specific
 .drive-agent/
+.drive-project.toml
 *.sqlite
 *.db
 *.log

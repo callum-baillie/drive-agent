@@ -60,6 +60,39 @@ func TestLoadCatalog(t *testing.T) {
 	}
 }
 
+func TestPackageSourceNormalizationCatalogEntries(t *testing.T) {
+	wd, _ := os.Getwd()
+	catalogPath := filepath.Join(wd, "..", "..", "..", "catalog", "packages.catalog.json")
+	cat, err := LoadCatalog(catalogPath)
+	if err != nil {
+		t.Fatalf("load catalog: %v", err)
+	}
+
+	tests := []struct {
+		id      string
+		manager string
+		name    string
+	}{
+		{"cursor", "homebrew-cask", "cursor"},
+		{"google-cloud-sdk", "homebrew-cask", "gcloud-cli"},
+		{"codex-cli", "npm", "@openai/codex"},
+		{"claude-code", "npm", "@anthropic-ai/claude-code"},
+		{"checkov", "homebrew", "checkov"},
+		{"gopls", "go-install", "golang.org/x/tools/gopls@latest"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.id, func(t *testing.T) {
+			pkg := cat.GetPackage(tt.id)
+			if pkg == nil {
+				t.Fatalf("missing package %q", tt.id)
+			}
+			if got := pkg.GetInstallName(tt.manager); got != tt.name {
+				t.Fatalf("%s via %s = %q, want %q", tt.id, tt.manager, got, tt.name)
+			}
+		})
+	}
+}
+
 func TestProfileParsing(t *testing.T) {
 	wd, _ := os.Getwd()
 	profileDir := filepath.Join(wd, "..", "..", "..", "profiles")

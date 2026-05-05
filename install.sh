@@ -112,9 +112,9 @@ AGENT_DIR="$DRIVE_ROOT/.drive-agent"
 echo "Target drive: $DRIVE_ROOT"
 
 if [[ "$DRY_RUN" == "true" ]]; then
-    echo "[Dry Run] Would create directories in $AGENT_DIR: bin, releases, backups, logs, state, config"
+    echo "[Dry Run] Would create directories in $AGENT_DIR: bin, releases, backups, logs, state, config, config/host-profiles, catalog"
 else
-    mkdir -p "$AGENT_DIR/"{bin,releases,backups,logs,state,config}
+    mkdir -p "$AGENT_DIR/"{bin,releases,backups,logs,state,config,config/host-profiles,catalog}
 fi
 
 # 4. Install Binary & Backups
@@ -135,10 +135,20 @@ if [[ "$DRY_RUN" == "true" ]]; then
     echo "[Dry Run] Would copy $BINARY_PATH to $TARGET_BIN"
     echo "[Dry Run] Would write $AGENT_DIR/VERSION ($VERSION)"
     echo "[Dry Run] Would write $AGENT_DIR/install.json"
+    echo "[Dry Run] Would copy package catalog and bundled host profiles"
 else
     cp "$BINARY_PATH" "$TARGET_BIN"
     chmod +x "$TARGET_BIN"
     echo "$VERSION" > "$AGENT_DIR/VERSION"
+    if [[ -f "$SCRIPT_DIR/catalog/packages.catalog.json" ]]; then
+        cp "$SCRIPT_DIR/catalog/packages.catalog.json" "$AGENT_DIR/catalog/packages.catalog.json"
+        echo "Installed package catalog to $AGENT_DIR/catalog/packages.catalog.json"
+    fi
+    if [[ -d "$SCRIPT_DIR/profiles" ]]; then
+        mkdir -p "$AGENT_DIR/config/host-profiles"
+        cp "$SCRIPT_DIR/profiles/"*.json "$AGENT_DIR/config/host-profiles/" 2>/dev/null || true
+        echo "Installed bundled host profiles to $AGENT_DIR/config/host-profiles"
+    fi
     
     BACKUP_VAL="null"
     if [[ -n "${BACKUP_BIN:-}" ]]; then

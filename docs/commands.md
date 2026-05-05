@@ -108,10 +108,22 @@ drive-agent cleanup apply --org personal            # Filter by org
 ## drive-agent backup
 
 ```bash
-drive-agent backup status                           # Show backup tools
-drive-agent backup init                             # Initialize (planned)
-drive-agent backup run                              # Run backup (planned)
-drive-agent backup check                            # Verify (planned)
+drive-agent backup init --provider restic --repo /Volumes/BackupDrive/restic/devdrive
+drive-agent backup status                           # Show configured repo, state, and warnings
+drive-agent backup doctor                           # Diagnose backup readiness
+drive-agent backup run                              # Run backup
+drive-agent backup run --dry-run                    # Show planned backup command
+drive-agent backup run --tag manual                 # Add tag
+drive-agent backup snapshots                        # List snapshots
+drive-agent backup snapshots --json                 # List snapshots as JSON
+drive-agent backup check                            # Run restic check
+drive-agent backup restore --snapshot latest --target /Volumes/RestoreTest
+drive-agent backup restore --snapshot latest --target /Volumes/RestoreTest --dry-run
+drive-agent backup excludes list
+drive-agent backup excludes add node_modules
+drive-agent backup excludes add --project personal/my-app 'apps/*/node_modules'
+drive-agent backup excludes list --project personal/my-app
+drive-agent backup excludes remove .next
 ```
 
 ## drive-agent self

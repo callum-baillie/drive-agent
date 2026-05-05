@@ -31,23 +31,35 @@ Each package entry has:
 | Category | Description | Count |
 |----------|-------------|-------|
 | package-managers | Package managers themselves | 1 |
-| core | Essential CLI tools | ~8 |
+| core | Essential CLI tools | ~10 |
+| backup | Backup tools | ~1 |
 | shell | Search, navigation, productivity | ~10 |
-| javascript | Node.js, package managers, tools | ~8 |
-| python | Python runtime and tools | ~5 |
+| javascript | Node.js, package managers, tools | ~10 |
+| python | Python runtime and tools | ~6 |
 | php | PHP runtime and tools | ~2 |
-| go-rust | Go and Rust toolchains | ~2 |
+| go-rust | Go and Rust toolchains | ~3 |
 | compilers | Build tools and compilers | ~2 |
 | containers | Docker, Kubernetes, etc. | ~7 |
-| databases | Database servers and clients | ~5 |
-| cloud | Cloud provider CLIs | ~6 |
-| ai-dev | AI developer tools | ~10 |
-| editors | Code editors and IDEs | ~3 |
+| databases | Database servers and clients | ~8 |
+| cloud | Cloud provider CLIs | ~9 |
+| ai-dev | AI developer tools | ~14 |
+| editors | Code editors and IDEs | ~7 |
 | mobile | Mobile development tools | ~6 |
 | api-testing | API clients and testing | ~5 |
-| security | Security scanning tools | ~4 |
+| security | Security scanning tools and security apps | ~7 |
 | documentation | Writing and documentation | ~2 |
-| productivity | Apps and media tools | ~8 |
+| productivity | Apps, browsers, terminals, and media tools | ~20 |
+
+## Source Normalization
+
+Host profiles should describe the desired install source, not just where a tool happened to come from on one Mac.
+
+- Prefer Homebrew formulae for stable developer CLIs such as `gh`, `restic`, `terraform`, `trivy`, `checkov`, `stripe-cli`, and database clients.
+- Prefer Homebrew casks for GUI apps such as VS Code, ChatGPT, Postman, OrbStack, Docker Desktop, browsers, terminals, and productivity apps.
+- Keep npm/pnpm/bun for JavaScript-specific global CLIs where that is the normal source.
+- Keep pipx/uv for isolated Python tools when Homebrew is not the better source.
+- Keep cargo and `go install` for language-specific binaries such as Rust or Go tools.
+- Avoid listing the same tool in multiple managers unless there is a clear reason.
 
 ## Package Kinds
 

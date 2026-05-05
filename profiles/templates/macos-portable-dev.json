@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "profileName": "macos-portable-dev",
+  "description": "Example macOS portable development profile. Copy to .drive-agent/config/host-profiles/ and customize for a real host.",
+  "target": {
+    "os": "macos",
+    "arch": "arm64"
+  },
+  "packageManagers": {
+    "installMissing": true,
+    "preferred": [
+      "homebrew",
+      "homebrew-cask",
+      "npm",
+      "pnpm",
+      "cargo",
+      "go-install"
+    ]
+  },
+  "categories": [
+    "core",
+    "shell",
+    "javascript",
+    "python",
+    "containers",
+    "cloud",
+    "ai-dev",
+    "editors",
+    "databases",
+    "security",
+    "productivity"
+  ],
+  "packages": {
+    "include": [
+      "git",
+      "gh",
+      "jq",
+      "ripgrep",
+      "tree",
+      "node",
+      "pnpm",
+      "python-3.13",
+      "go",
+      "gopls",
+      "docker",
+      "orbstack",
+      "vscode",
+      "postman",
+      "google-chrome",
+      "raycast",
+      "rectangle",
+      "restic",
+      "trivy",
+      "gitleaks"
+    ],
+    "exclude": []
+  },
+  "shell": {
+    "installAliases": true,
+    "addLocalBinToPath": true,
+    "configureDriveAgentAlias": true
+  },
+  "caches": {
+    "mode": "prompt",
+    "allowExternalDriveCaches": true,
+    "allowDisableCaches": true,
+    "externalDriveRoot": "/Volumes/DevDrive",
+    "npmCachePath": "/Volumes/DevDrive/Caches/npm",
+    "pnpmStorePath": "/Volumes/DevDrive/Caches/pnpm",
+    "bunCachePath": "/Volumes/DevDrive/Caches/bun",
+    "homebrewCachePath": "/Volumes/DevDrive/Caches/homebrew"
+  },
+  "docker": {
+    "mode": "prompt",
+    "allowExternalDriveStorage": true,
+    "externalDataRoot": "/Volumes/DevDrive/DevData/containers",
+    "externalBuildCacheRoot": "/Volumes/DevDrive/DevData/docker-build-cache",
+    "doNotModifyWithoutConfirmation": true
+  },
+  "safety": {
+    "dryRunFirst": true,
+    "requireConfirmation": true,
+    "allowSudo": false,
+    "allowCurlPipeShell": false
+  }
+}
