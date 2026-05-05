@@ -33,8 +33,9 @@ Each package entry has:
 | package-managers | Package managers themselves | 1 |
 | core | Essential CLI tools | ~10 |
 | backup | Backup tools | ~1 |
-| shell | Search, navigation, productivity | ~10 |
-| javascript | Node.js, package managers, tools | ~10 |
+| shell | Search, navigation, productivity | ~14 |
+| javascript | Node.js, package managers, tools | ~19 |
+| assets | Image and asset optimization tools | ~6 |
 | python | Python runtime and tools | ~6 |
 | php | PHP runtime and tools | ~2 |
 | go-rust | Go and Rust toolchains | ~3 |
@@ -60,6 +61,27 @@ Host profiles should describe the desired install source, not just where a tool 
 - Keep pipx/uv for isolated Python tools when Homebrew is not the better source.
 - Keep cargo and `go install` for language-specific binaries such as Rust or Go tools.
 - Avoid listing the same tool in multiple managers unless there is a clear reason.
+
+## Recommended Node/React/Next.js and coding-agent tools
+
+Host profiles can include small, reusable CLIs that help across many projects:
+
+- Search/navigation/refactor: `ripgrep`, `fd`, `ast-grep`, `git-delta`, `lazygit`, `tokei`, `cloc`.
+- JavaScript maintenance: `biome`, `eslint`, `prettier`, `typescript`, `tsx`, `npm-check-updates`, `depcheck`, `knip`, `turbo`, `vercel`, `wrangler`.
+- Asset tooling: `imagemagick`, `webp`, `jpegoptim`, `optipng`, `pngquant`, `svgo`.
+
+Project frameworks and runtime libraries should normally stay in each project's `package.json`, not in a host profile. That includes `next`, `react`, `react-dom`, `tailwindcss`, `vite`, `vitest`, `jest`, `eslint-config-next`, `@playwright/test`, and `sharp`.
+
+The catalog includes `playwright-cli` only as an optional host-level CLI entry. It is marked `requiresExplicitApproval` so profile setup will not silently install it or force browser downloads globally. Prefer project-local `@playwright/test` plus project-managed browser installation for real test suites.
+
+When an install name differs from the binary name, `check.command` should use the actual binary. Examples:
+
+- `ripgrep` installs as `ripgrep`; check with `rg --version`.
+- `git-delta` is cataloged as `delta`; check with `delta --version`.
+- `ast-grep` installs as `ast-grep`; check with `sg --version`.
+- `imagemagick` installs as `imagemagick`; check with `magick --version`.
+- `google-cloud-sdk` installs as `gcloud-cli`; check with `gcloud --version`.
+- `vscode` installs as `visual-studio-code`; check with `code --version`.
 
 ## Package Kinds
 

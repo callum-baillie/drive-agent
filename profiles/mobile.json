@@ -4,17 +4,53 @@
   "description": "Mobile development setup with Xcode, Android Studio, and React Native/Expo tools",
   "packageManagers": {
     "installMissing": true,
-    "preferred": ["homebrew", "homebrew-cask", "npm"]
+    "preferred": [
+      "homebrew",
+      "homebrew-cask",
+      "npm"
+    ]
   },
-  "categories": ["core", "shell", "javascript", "mobile"],
+  "categories": [
+    "core",
+    "shell",
+    "javascript",
+    "mobile",
+    "assets"
+  ],
   "packages": {
     "include": [
-      "git", "gh", "jq", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide", "starship",
-      "node", "pnpm", "typescript",
-      "xcode", "android-studio",
-      "watchman", "cocoapods", "fastlane",
-      "expo-cli", "eas-cli",
-      "cursor", "vscode"
+      "git",
+      "gh",
+      "jq",
+      "ripgrep",
+      "fd",
+      "fzf",
+      "bat",
+      "eza",
+      "zoxide",
+      "starship",
+      "node",
+      "pnpm",
+      "typescript",
+      "xcode",
+      "android-studio",
+      "watchman",
+      "cocoapods",
+      "fastlane",
+      "expo-cli",
+      "eas-cli",
+      "cursor",
+      "vscode",
+      "yq",
+      "biome",
+      "eslint",
+      "prettier",
+      "tsx",
+      "imagemagick",
+      "webp",
+      "svgo",
+      "pngquant",
+      "optipng"
     ],
     "exclude": []
   },

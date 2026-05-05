@@ -4,20 +4,66 @@
   "description": "AI-focused developer setup with all major AI coding tools",
   "packageManagers": {
     "installMissing": true,
-    "preferred": ["homebrew", "homebrew-cask", "npm"]
+    "preferred": [
+      "homebrew",
+      "homebrew-cask",
+      "npm"
+    ]
   },
-  "categories": ["core", "shell", "javascript", "python", "containers", "databases", "ai-dev"],
+  "categories": [
+    "core",
+    "shell",
+    "javascript",
+    "python",
+    "containers",
+    "databases",
+    "ai-dev",
+    "api-testing"
+  ],
   "packages": {
     "include": [
-      "git", "gh", "jq", "curl", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide",
-      "starship", "lazygit", "delta", "tmux",
-      "node", "pnpm", "typescript",
-      "python", "uv",
+      "git",
+      "gh",
+      "jq",
+      "curl",
+      "ripgrep",
+      "fd",
+      "fzf",
+      "bat",
+      "eza",
+      "zoxide",
+      "starship",
+      "lazygit",
+      "delta",
+      "tmux",
+      "node",
+      "pnpm",
+      "typescript",
+      "python",
+      "uv",
       "docker",
-      "codex-cli", "claude-code", "chatgpt", "cursor", "windsurf",
-      "aider", "ollama", "vscode"
+      "codex-cli",
+      "claude-code",
+      "chatgpt",
+      "cursor",
+      "windsurf",
+      "aider",
+      "ollama",
+      "vscode",
+      "ast-grep",
+      "yq",
+      "tree",
+      "tokei",
+      "cloc",
+      "biome",
+      "knip",
+      "depcheck",
+      "playwright-cli"
     ],
-    "exclude": ["xcode", "android-studio"]
+    "exclude": [
+      "xcode",
+      "android-studio"
+    ]
   },
   "shell": {
     "installAliases": true,

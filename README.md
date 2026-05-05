@@ -77,6 +77,10 @@ drive-agent host setup --path /Volumes/DevDrive --profile mac-mini
 
 Drive-local profiles live in `.drive-agent/config/host-profiles/`. A profile can plan host package installs, shell aliases, optional external package caches, and external Docker/container bind-mount roots. It does not copy secrets, logins, license state, app settings, SSH keys, browser profiles, private keychains, or credentials.
 
+### Recommended Node/React/Next.js and coding-agent tools
+
+Good host-level tools include `ripgrep`, `fd`, `ast-grep`, `git-delta`, `lazygit`, `biome`, `knip`, `depcheck`, `svgo`, and `imagemagick`. Project-specific frameworks and runtime dependencies such as `next`, `react`, `tailwindcss`, `vitest`, `jest`, `@playwright/test`, and `sharp` should normally live in each project's `package.json`.
+
 ## Updates and Rollback
 
 Drive Agent can safely update itself in-place via GitHub releases:

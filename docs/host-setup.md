@@ -133,6 +133,14 @@ drive-agent host packages list
 drive-agent host packages list --category ai-dev
 ```
 
+## Recommended Node/React/Next.js And Coding-Agent Tools
+
+Use host profiles for small tools that are useful across many repositories: `ripgrep`, `fd`, `ast-grep`, `git-delta`, `lazygit`, `biome`, `knip`, `depcheck`, `svgo`, and `imagemagick`.
+
+Keep project frameworks and runtime dependencies in each repository's `package.json`. `next`, `react`, `react-dom`, `tailwindcss`, `vite`, `vitest`, `jest`, `eslint-config-next`, `@playwright/test`, and `sharp` should normally be project dependencies so versions stay tied to the app that uses them.
+
+`playwright-cli` is optional host tooling only. Drive Agent marks it as explicit-approval because real Playwright test suites should manage `@playwright/test` and browser downloads per project.
+
 ## Safety
 
 - Dry-run first for profile setup.

@@ -4,11 +4,32 @@
   "description": "Minimal developer setup with essential CLI tools",
   "packageManagers": {
     "installMissing": true,
-    "preferred": ["homebrew", "homebrew-cask"]
+    "preferred": [
+      "homebrew",
+      "homebrew-cask"
+    ]
   },
-  "categories": ["core", "shell"],
+  "categories": [
+    "core",
+    "shell"
+  ],
   "packages": {
-    "include": ["git", "gh", "jq", "ripgrep", "fd", "fzf", "bat", "eza", "zoxide", "starship", "vscode"],
+    "include": [
+      "git",
+      "gh",
+      "jq",
+      "ripgrep",
+      "fd",
+      "fzf",
+      "bat",
+      "eza",
+      "zoxide",
+      "starship",
+      "vscode",
+      "yq",
+      "tree",
+      "delta"
+    ],
     "exclude": []
   },
   "shell": {
