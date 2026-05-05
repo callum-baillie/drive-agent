@@ -67,6 +67,20 @@ only after confirmation.
 
 ---
 
+### [TODO-012] Mac App Store package provider
+
+Some useful macOS apps are not currently available as Homebrew casks on this
+machine. Drive Agent can detect these apps through `check.appBundles`, but it
+does not yet install them through the Mac App Store.
+
+Future work:
+1. Add a `mas` package provider when the `mas` CLI is installed.
+2. Support App Store IDs in `catalog/packages.catalog.json`.
+3. Keep Mac App Store installs explicit because they depend on the user's Apple
+   ID, purchase history, and local App Store session.
+
+---
+
 ### [TODO-006] `git push-all` (explicit per-repo confirmation)
 
 Not implemented for safety. If added, must require explicit per-repo confirmation,

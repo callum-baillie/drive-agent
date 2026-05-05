@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/callum-baillie/drive-agent/internal/config"
@@ -25,13 +26,15 @@ const (
 )
 
 type packageAction struct {
-	ID          string
-	Name        string
-	ManagerID   string
-	PackageName string
-	Command     string
-	Installed   bool
-	SkipReason  string
+	ID              string
+	Name            string
+	ManagerID       string
+	PackageName     string
+	Command         string
+	Installed       bool
+	InstalledDetail string
+	SkipReason      string
+	InstallGlobal   bool
 }
 
 type packagePlan struct {
@@ -55,6 +58,33 @@ type setupAction struct {
 	Current     string
 	Planned     string
 	RequiresRun bool
+}
+
+type packagePlanOptions struct {
+	Force           bool
+	IncludeExplicit bool
+	RunCheck        func(command string) bool
+	PathExists      func(path string) bool
+	HomeDir         string
+}
+
+type packageInstallStatus struct {
+	Installed bool
+	Detail    string
+}
+
+func defaultPackagePlanOptions() packagePlanOptions {
+	homeDir, _ := os.UserHomeDir()
+	return packagePlanOptions{
+		RunCheck: func(command string) bool {
+			return exec.Command("sh", "-c", command).Run() == nil
+		},
+		PathExists: func(path string) bool {
+			_, err := os.Stat(path)
+			return err == nil
+		},
+		HomeDir: homeDir,
+	}
 }
 
 func normalizeCacheMode(mode string) (string, error) {
@@ -82,7 +112,7 @@ func normalizeDockerMode(mode string) (string, error) {
 		return dockerModeDefault, nil
 	case dockerModeBindMounts, "bind-mount", "external-bind-mounts":
 		return dockerModeBindMounts, nil
-	case dockerModeDaemon, "daemon-data-root":
+	case dockerModeDaemon, "daemon-data-root", "daemon-guidance":
 		return dockerModeDaemon, nil
 	default:
 		return "", fmt.Errorf("unknown Docker mode %q", mode)
@@ -200,6 +230,21 @@ func buildDockerPlan(profile *config.HostProfile, driveRoot, mode string) ([]set
 }
 
 func buildPackagePlan(profile *config.HostProfile, cat *catalog.Catalog, registry *providers.Registry) packagePlan {
+	return buildPackagePlanWithOptions(profile, cat, registry, defaultPackagePlanOptions())
+}
+
+func buildPackagePlanWithOptions(profile *config.HostProfile, cat *catalog.Catalog, registry *providers.Registry, opts packagePlanOptions) packagePlan {
+	defaults := defaultPackagePlanOptions()
+	if opts.RunCheck == nil {
+		opts.RunCheck = defaults.RunCheck
+	}
+	if opts.PathExists == nil {
+		opts.PathExists = defaults.PathExists
+	}
+	if opts.HomeDir == "" {
+		opts.HomeDir = defaults.HomeDir
+	}
+
 	plan := packagePlan{}
 	for _, mgrID := range profile.PackageManagers.Preferred {
 		if mgr, ok := registry.Get(mgrID); ok {
@@ -227,28 +272,69 @@ func buildPackagePlan(profile *config.HostProfile, cat *catalog.Catalog, registr
 			continue
 		}
 		action := packageAction{ID: pkg.ID, Name: pkg.Name}
-		if isPackageCheckInstalled(pkg) {
-			action.Installed = true
-			plan.Actions = append(plan.Actions, action)
-			continue
+		if !opts.Force {
+			status := packageInstalledStatus(pkg, opts)
+			if status.Installed {
+				action.Installed = true
+				action.InstalledDetail = status.Detail
+				plan.Actions = append(plan.Actions, action)
+				continue
+			}
 		}
-		if pkg.RequiresApproval {
+		if pkg.RequiresApproval && !opts.IncludeExplicit {
 			action.SkipReason = "requires explicit approval"
 			plan.Actions = append(plan.Actions, action)
 			continue
 		}
 		mgr, managerID := chooseProvider(pkg, profile.PackageManagers.Preferred, registry)
 		if mgr == nil {
-			action.SkipReason = "no available provider"
+			action.SkipReason = "no supported provider on " + runtime.GOOS + "/" + runtime.GOARCH
 			plan.Actions = append(plan.Actions, action)
 			continue
 		}
 		action.ManagerID = managerID
 		action.PackageName = pkg.GetInstallName(managerID)
+		if cfg, ok := pkg.Install[managerID]; ok {
+			action.InstallGlobal = cfg.Global
+		}
 		action.Command, _ = mgr.InstallPackage(action.PackageName, true)
 		plan.Actions = append(plan.Actions, action)
 	}
 	return plan
+}
+
+func packageInstalledStatus(pkg *catalog.Package, opts packagePlanOptions) packageInstallStatus {
+	if pkg.Check == nil {
+		return packageInstallStatus{}
+	}
+	for _, bundlePath := range pkg.Check.AppBundles {
+		expanded := expandHomePath(bundlePath, opts.HomeDir)
+		if expanded != "" && opts.PathExists(expanded) {
+			return packageInstallStatus{Installed: true, Detail: expanded}
+		}
+	}
+	if command := strings.TrimSpace(pkg.Check.Command); command != "" && opts.RunCheck(command) {
+		return packageInstallStatus{Installed: true}
+	}
+	return packageInstallStatus{}
+}
+
+func expandHomePath(path, homeDir string) string {
+	if path == "~" {
+		return homeDir
+	}
+	if strings.HasPrefix(path, "~/") {
+		if homeDir == "" {
+			return path
+		}
+		return filepath.Join(homeDir, strings.TrimPrefix(path, "~/"))
+	}
+	return path
+}
+
+func isPackageCheckInstalled(pkg *catalog.Package) bool {
+	status := packageInstalledStatus(pkg, defaultPackagePlanOptions())
+	return status.Installed
 }
 
 func chooseProvider(pkg *catalog.Package, preferred []string, registry *providers.Registry) (providers.Provider, string) {
@@ -268,13 +354,6 @@ func chooseProvider(pkg *catalog.Package, preferred []string, registry *provider
 		}
 	}
 	return nil, ""
-}
-
-func isPackageCheckInstalled(pkg *catalog.Package) bool {
-	if pkg.Check == nil || strings.TrimSpace(pkg.Check.Command) == "" {
-		return false
-	}
-	return exec.Command("sh", "-c", pkg.Check.Command).Run() == nil
 }
 
 func commandOutput(name string, args ...string) string {

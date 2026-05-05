@@ -73,9 +73,14 @@ Drive Agent can keep reusable host setup profiles on the external drive:
 ```bash
 drive-agent host setup --path /Volumes/DevDrive --profile mac-mini --dry-run
 drive-agent host setup --path /Volumes/DevDrive --profile mac-mini
+drive-agent host setup --path /Volumes/DevDrive --profile mac-mini --yes --cache-mode external-drive --docker-mode bind-mounts
 ```
 
 Drive-local profiles live in `.drive-agent/config/host-profiles/`. A profile can plan host package installs, shell aliases, optional external package caches, and external Docker/container bind-mount roots. It does not copy secrets, logins, license state, app settings, SSH keys, browser profiles, private keychains, or credentials.
+
+For Homebrew casks, the package catalog can also check app bundle paths such as `/Applications/Visual Studio Code.app`, so manually installed apps are skipped instead of reinstalled by default.
+
+External cache/container exports are persisted in a separate `# >>> drive-agent storage >>>` shell block. That lets setup update `HOMEBREW_CACHE`, `BUN_INSTALL_CACHE_DIR`, `DRIVE_AGENT_CONTAINER_DATA`, and `DRIVE_AGENT_DOCKER_BUILD_CACHE` without rewriting the main PATH/alias block.
 
 ### Recommended Node/React/Next.js and coding-agent tools
 

@@ -150,3 +150,112 @@ func TestShellBlockContent_QuotesDrivePathsWithSpaces(t *testing.T) {
 		}
 	}
 }
+
+func TestStorageShellBlockContent_QuotesDrivePathsWithSpaces(t *testing.T) {
+	content := StorageShellBlockContent(ShellBlockOptions{
+		HomebrewCachePath: "/Volumes/External SSD/Caches/homebrew",
+		BunCachePath:      "/Volumes/External SSD/Caches/bun",
+		ContainerDataPath: "/Volumes/External SSD/DevData/containers",
+		DockerCachePath:   "/Volumes/External SSD/DevData/docker-build-cache",
+	})
+
+	expected := []string{
+		`export HOMEBREW_CACHE='/Volumes/External SSD/Caches/homebrew'`,
+		`export BUN_INSTALL_CACHE_DIR='/Volumes/External SSD/Caches/bun'`,
+		`export DRIVE_AGENT_CONTAINER_DATA='/Volumes/External SSD/DevData/containers'`,
+		`export DRIVE_AGENT_DOCKER_BUILD_CACHE='/Volumes/External SSD/DevData/docker-build-cache'`,
+	}
+	for _, want := range expected {
+		if !strings.Contains(content, want) {
+			t.Fatalf("storage shell block missing %q in:\n%s", want, content)
+		}
+	}
+	if strings.Contains(content, "npm_config_cache") {
+		t.Fatalf("storage shell block should not persist npm_config_cache; npm is configured with npm config set:\n%s", content)
+	}
+}
+
+func TestAppendOrUpdateStorageShellBlock_IdempotentAndBacksUp(t *testing.T) {
+	tmpDir := t.TempDir()
+	configPath := filepath.Join(tmpDir, ".zshrc")
+	initial := "# initial\nexport FOO=bar\n"
+	if err := os.WriteFile(configPath, []byte(initial), 0644); err != nil {
+		t.Fatal(err)
+	}
+	options := ShellBlockOptions{
+		HomebrewCachePath: "/Volumes/Test Drive/Caches/homebrew",
+		BunCachePath:      "/Volumes/Test Drive/Caches/bun",
+		ContainerDataPath: "/Volumes/Test Drive/DevData/containers",
+		DockerCachePath:   "/Volumes/Test Drive/DevData/docker-build-cache",
+	}
+
+	backupPath, changed, err := AppendOrUpdateStorageShellBlock(configPath, options)
+	if err != nil {
+		t.Fatalf("AppendOrUpdateStorageShellBlock returned error: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected first call to write storage block")
+	}
+	if backupPath != BackupPathFor(configPath) {
+		t.Fatalf("backup path = %q, want %q", backupPath, BackupPathFor(configPath))
+	}
+	backupData, err := os.ReadFile(backupPath)
+	if err != nil {
+		t.Fatalf("read backup: %v", err)
+	}
+	if string(backupData) != initial {
+		t.Fatalf("backup content = %q, want %q", string(backupData), initial)
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	if strings.Count(content, ">>> drive-agent storage >>>") != 1 {
+		t.Fatalf("storage block count = %d, want 1\n%s", strings.Count(content, ">>> drive-agent storage >>>"), content)
+	}
+
+	_, changed, err = AppendOrUpdateStorageShellBlock(configPath, options)
+	if err != nil {
+		t.Fatalf("second AppendOrUpdateStorageShellBlock returned error: %v", err)
+	}
+	if changed {
+		t.Fatal("second call should be a no-op")
+	}
+	data, err = os.ReadFile(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Count(string(data), ">>> drive-agent storage >>>") != 1 {
+		t.Fatalf("storage block was duplicated:\n%s", string(data))
+	}
+}
+
+func TestAppendOrUpdateStorageShellBlock_UpdatesExistingBlock(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), ".zshrc")
+	if err := os.WriteFile(configPath, []byte(StorageShellBlock("export HOMEBREW_CACHE='/old'")+"\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, changed, err := AppendOrUpdateStorageShellBlock(configPath, ShellBlockOptions{
+		HomebrewCachePath: "/Volumes/New/Caches/homebrew",
+	})
+	if err != nil {
+		t.Fatalf("AppendOrUpdateStorageShellBlock returned error: %v", err)
+	}
+	if !changed {
+		t.Fatal("expected existing storage block to be updated")
+	}
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	content := string(data)
+	if strings.Count(content, ">>> drive-agent storage >>>") != 1 {
+		t.Fatalf("storage block count = %d, want 1\n%s", strings.Count(content, ">>> drive-agent storage >>>"), content)
+	}
+	if strings.Contains(content, "/old") || !strings.Contains(content, "/Volumes/New/Caches/homebrew") {
+		t.Fatalf("storage block was not replaced correctly:\n%s", content)
+	}
+}

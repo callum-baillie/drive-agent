@@ -22,7 +22,10 @@ Each package entry has:
     "apt": { "id": "git" },
     "winget": { "id": "Git.Git" }
   },
-  "check": { "command": "git --version" }
+  "check": {
+    "command": "git --version",
+    "appBundles": []
+  }
 }
 ```
 
@@ -58,6 +61,7 @@ Host profiles should describe the desired install source, not just where a tool 
 - Prefer Homebrew formulae for stable developer CLIs such as `gh`, `restic`, `terraform`, `trivy`, `checkov`, `stripe-cli`, and database clients.
 - Prefer Homebrew casks for GUI apps such as VS Code, ChatGPT, Postman, OrbStack, Docker Desktop, browsers, terminals, and productivity apps.
 - Keep npm/pnpm/bun for JavaScript-specific global CLIs where that is the normal source.
+- Turborepo is cataloged as the npm/pnpm global package `turbo`; do not map it to Homebrew unless a valid formula is verified on the target platform.
 - Keep pipx/uv for isolated Python tools when Homebrew is not the better source.
 - Keep cargo and `go install` for language-specific binaries such as Rust or Go tools.
 - Avoid listing the same tool in multiple managers unless there is a clear reason.
@@ -98,6 +102,44 @@ Edit `catalog/packages.catalog.json` and add an entry following the schema. Ensu
 3. `install` has entries for each manager that supports this package
 4. `check.command` verifies installation
 
+For Homebrew casks and GUI apps, add known app bundle paths under `check.appBundles`:
+
+```json
+{
+  "id": "vscode",
+  "name": "Visual Studio Code",
+  "check": {
+    "command": "code --version",
+    "appBundles": [
+      "/Applications/Visual Studio Code.app",
+      "~/Applications/Visual Studio Code.app"
+    ]
+  }
+}
+```
+
+Drive Agent treats a matching app bundle as installed even if the Homebrew cask itself is not installed. This prevents cask failures when a user installed an app manually or migrated it from another Mac.
+
+If a GUI app is useful to detect but has no valid Homebrew cask, keep it as a
+detection-only catalog entry with `installPreference: []`, `install: {}`, and
+`check.appBundles`. Host setup will report it as installed when the app bundle
+exists, or skip it as having no supported provider when missing.
+
+## Troubleshooting Package Mappings
+
+Before adding or changing a provider mapping, verify it with read-only metadata
+commands:
+
+```bash
+brew info --formula <formula>
+brew info --cask <cask>
+npm view <package> version
+```
+
+If metadata lookup fails, do not leave the package mapped to that provider. Use
+another confirmed provider, mark the entry detection-only, or document the gap
+in `docs/todos.md`.
+
 ## Safety
 
-Packages with `requiresExplicitApproval: true` (like `claude-code`, `xcode`, `android-studio`) are never auto-installed even with `--yes`.
+Packages with `requiresExplicitApproval: true` (like `claude-code`, `xcode`, `android-studio`, and `playwright-cli`) are never auto-installed with `--yes` unless `host setup --include-explicit` is also supplied.

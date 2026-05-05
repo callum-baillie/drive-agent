@@ -40,9 +40,14 @@ Drive Agent is designed with safety as the top priority. No destructive operatio
   - `disabled` makes no cache config changes and deletes nothing
 - Docker storage setup prefers external bind-mount roots over daemon relocation
 - Drive Agent does not edit Docker Desktop or OrbStack daemon storage automatically
+- `--yes`/`-y` reduces prompts only for normal package installs and explicit cache/Docker modes; it does not bypass safety checks
+- Packages marked `requiresExplicitApproval` remain skipped with `--yes` unless `--include-explicit` is supplied
+- `--force` may attempt installs even when a package appears installed, and should only be used after manual review
+- Homebrew cask packages can declare `check.appBundles` so manually installed `.app` bundles are treated as installed and skipped by default
 - Shell config edits:
   - Create a backup before modification (`.zshrc.drive-agent-backup` or installer-created dated backup)
   - Use marked blocks (`# >>> drive-agent >>>` / `# <<< drive-agent <<<`)
+  - Persist portable cache/container exports in a separate block (`# >>> drive-agent storage >>>` / `# <<< drive-agent storage <<<`)
   - Can be identified and removed later
 - Supports `--dry-run` to preview all changes
 - Package installation always shows exact commands before execution

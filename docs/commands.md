@@ -69,8 +69,13 @@ drive-agent project reindex --dry-run               # Preview reindex
 ```bash
 drive-agent host setup                              # Interactive setup
 drive-agent host setup --profile developer          # Use profile
-drive-agent host setup --profile ai-developer --yes # Non-interactive
+drive-agent host setup --profile ai-developer --yes # Accept normal package/cache/storage prompts
+drive-agent host setup --profile ai-developer -y    # Short form for --yes
 drive-agent host setup --dry-run                    # Preview only
+drive-agent host setup --force                      # Attempt installs even if checks say installed
+drive-agent host setup --include-explicit           # Include requiresExplicitApproval packages
+drive-agent host setup --cache-mode external-drive  # host-local, external-drive, disabled
+drive-agent host setup --docker-mode bind-mounts    # default, bind-mounts, daemon-guidance
 drive-agent host doctor                             # Check host tools
 drive-agent host packages list                      # List categories
 drive-agent host packages list --category core      # List packages in category
@@ -78,6 +83,21 @@ drive-agent host packages install git gh jq         # Install specific packages
 drive-agent host packages install --category core --yes
 drive-agent host packages install --dry-run         # Preview installs
 ```
+
+Less-interactive profile setup:
+
+```bash
+drive-agent host setup \
+  --path /Volumes/ExternalSSD \
+  --profile mac-mini \
+  --yes \
+  --cache-mode external-drive \
+  --docker-mode bind-mounts
+```
+
+With `--cache-mode external-drive` and `--docker-mode bind-mounts`, setup
+creates the requested drive directories, applies npm/pnpm cache config, and
+persists Homebrew/Bun/container exports in the `drive-agent storage` shell block.
 
 ## drive-agent git
 

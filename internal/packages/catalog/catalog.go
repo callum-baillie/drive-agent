@@ -14,32 +14,33 @@ type Catalog struct {
 
 // Package represents a single package entry in the catalog.
 type Package struct {
-	ID                string                       `json:"id"`
-	Name              string                       `json:"name"`
-	Category          string                       `json:"category"`
-	Description       string                       `json:"description"`
-	Kind              string                       `json:"kind"` // "cli", "gui", "runtime", "service"
-	Default           bool                         `json:"default,omitempty"`
-	InstallPreference []string                     `json:"installPreference"`
-	Install           map[string]InstallConfig     `json:"install"`
-	Check             *CheckConfig                 `json:"check,omitempty"`
-	RequiresApproval  bool                         `json:"requiresExplicitApproval,omitempty"`
+	ID                string                   `json:"id"`
+	Name              string                   `json:"name"`
+	Category          string                   `json:"category"`
+	Description       string                   `json:"description"`
+	Kind              string                   `json:"kind"` // "cli", "gui", "runtime", "service"
+	Default           bool                     `json:"default,omitempty"`
+	InstallPreference []string                 `json:"installPreference"`
+	Install           map[string]InstallConfig `json:"install"`
+	Check             *CheckConfig             `json:"check,omitempty"`
+	RequiresApproval  bool                     `json:"requiresExplicitApproval,omitempty"`
 }
 
 // InstallConfig holds installation details for a specific package manager.
 type InstallConfig struct {
-	Type   string `json:"type,omitempty"`   // "formula", "cask"
-	Name   string `json:"name,omitempty"`   // Package name for this manager
-	ID     string `json:"id,omitempty"`     // Alternative ID field (winget, choco, etc.)
-	Global bool   `json:"global,omitempty"` // For npm/pnpm global installs
-	MacOS  string `json:"macos,omitempty"`  // Native install command for macOS
+	Type    string `json:"type,omitempty"`    // "formula", "cask"
+	Name    string `json:"name,omitempty"`    // Package name for this manager
+	ID      string `json:"id,omitempty"`      // Alternative ID field (winget, choco, etc.)
+	Global  bool   `json:"global,omitempty"`  // For npm/pnpm global installs
+	MacOS   string `json:"macos,omitempty"`   // Native install command for macOS
 	Windows string `json:"windows,omitempty"` // Native install command for Windows
-	Linux  string `json:"linux,omitempty"`  // Native install command for Linux
+	Linux   string `json:"linux,omitempty"`   // Native install command for Linux
 }
 
 // CheckConfig defines how to verify a package is installed.
 type CheckConfig struct {
-	Command string `json:"command"`
+	Command    string   `json:"command"`
+	AppBundles []string `json:"appBundles,omitempty"`
 }
 
 // LoadCatalog reads and parses a package catalog JSON file.

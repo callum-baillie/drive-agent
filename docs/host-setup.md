@@ -43,6 +43,33 @@ drive-agent host setup \
 
 Dry-run output shows package managers, packages/apps to install, cache choices, Docker/container storage choices, shell changes, and commands that would run.
 
+For less-interactive setup, pass explicit cache and Docker choices with `--yes`:
+
+```bash
+drive-agent host setup \
+  --path /Volumes/ExternalSSD \
+  --profile mac-mini \
+  --yes \
+  --cache-mode external-drive \
+  --docker-mode bind-mounts
+```
+
+`--yes` also has short form `-y`. It accepts normal package installs and selected cache/storage changes when the mode is explicit. It does not bypass safety checks and does not install packages marked `requiresExplicitApproval`.
+
+To include explicit-approval packages such as `playwright-cli`, opt in separately:
+
+```bash
+drive-agent host setup \
+  --path /Volumes/ExternalSSD \
+  --profile mac-mini \
+  --yes \
+  --include-explicit \
+  --cache-mode external-drive \
+  --docker-mode bind-mounts
+```
+
+Use `--force` only when you intentionally want Drive Agent to attempt an install even though a catalog check says the package or app is already present. For Homebrew casks, manually installed app bundles may still require manual cleanup or review before Homebrew can adopt or reinstall the cask.
+
 ## Generating A Host Profile
 
 To turn an existing Mac into a reusable profile:
@@ -84,6 +111,16 @@ export BUN_INSTALL_CACHE_DIR=/Volumes/ExternalSSD/Caches/bun
 export HOMEBREW_CACHE=/Volumes/ExternalSSD/Caches/homebrew
 ```
 
+These exports are written to a separate idempotent storage block so they can be
+added or updated even when the main Drive Agent PATH/alias block already exists:
+
+```bash
+# >>> drive-agent storage >>>
+export HOMEBREW_CACHE='/Volumes/ExternalSSD/Caches/homebrew'
+export BUN_INSTALL_CACHE_DIR='/Volumes/ExternalSSD/Caches/bun'
+# <<< drive-agent storage <<<
+```
+
 Homebrew itself should stay installed on the host. Only the Homebrew cache is portable.
 
 ## Docker And Container Storage
@@ -93,7 +130,7 @@ Profile Docker mode can be:
 - `prompt`: ask during interactive setup.
 - `default`: keep Docker's default storage.
 - `bind-mounts`: create external project/container roots and export environment variables.
-- `daemon`: documentation-only guidance for daemon relocation.
+- `daemon-guidance`: documentation-only guidance for daemon relocation. `daemon` and `daemon-data-root` are accepted aliases.
 
 The preferred default for portability is bind mounts:
 
@@ -108,6 +145,10 @@ Shell exports:
 export DRIVE_AGENT_CONTAINER_DATA=/Volumes/ExternalSSD/DevData/containers
 export DRIVE_AGENT_DOCKER_BUILD_CACHE=/Volumes/ExternalSSD/DevData/docker-build-cache
 ```
+
+When `--docker-mode bind-mounts` is applied, these exports are written into the
+same `drive-agent storage` shell block as the cache exports. Dry-run prints the
+planned block without editing shell files.
 
 Relocating Docker Desktop's whole disk image or daemon `data-root` is not the default. Docker Desktop on macOS and OrbStack do not behave exactly like a Linux Docker daemon, and UI-managed storage settings are usually safer than editing `~/.docker/daemon.json` directly. If daemon editing is ever implemented, it must back up existing JSON, merge carefully, require explicit confirmation, and avoid automatic restarts.
 
@@ -132,6 +173,12 @@ drive-agent host packages install --category core,shell,javascript --dry-run
 drive-agent host packages list
 drive-agent host packages list --category ai-dev
 ```
+
+Host setup uses each catalog entry's `check.command` and `check.appBundles` before planning an install. This lets Drive Agent skip apps that were installed manually or by another source. For example, `vscode` checks both `code --version` and `/Applications/Visual Studio Code.app`, so a manually installed VS Code app is treated as already installed instead of triggering `brew install --cask visual-studio-code`.
+
+If a dry-run shows an unexpected manager, fix the catalog entry before running
+real setup. For example, Turborepo is intentionally mapped to npm/pnpm as the
+global package `turbo`, not a Homebrew formula.
 
 ## Recommended Node/React/Next.js And Coding-Agent Tools
 

@@ -130,10 +130,17 @@ func ShellConfigFile() string {
 
 const shellBlockStart = "# >>> drive-agent >>>"
 const shellBlockEnd = "# <<< drive-agent <<<"
+const storageShellBlockStart = "# >>> drive-agent storage >>>"
+const storageShellBlockEnd = "# <<< drive-agent storage <<<"
 
 // ShellBlock generates a marked block for shell config.
 func ShellBlock(content string) string {
 	return fmt.Sprintf("%s\n%s\n%s", shellBlockStart, content, shellBlockEnd)
+}
+
+// StorageShellBlock generates a marked block for portable cache/storage exports.
+func StorageShellBlock(content string) string {
+	return fmt.Sprintf("%s\n%s\n%s", storageShellBlockStart, content, storageShellBlockEnd)
 }
 
 // ShellBlockOptions controls optional drive-agent shell exports.
@@ -190,6 +197,92 @@ func ShellBlockContentWithOptions(driveRoot string, options ShellBlockOptions) s
 		lines = append(lines, fmt.Sprintf("export DRIVE_AGENT_DOCKER_BUILD_CACHE=%s", ShellQuote(options.DockerCachePath)))
 	}
 	return strings.Join(lines, "\n")
+}
+
+// StorageShellBlockNeeded reports whether there are portable storage exports to persist.
+func StorageShellBlockNeeded(options ShellBlockOptions) bool {
+	return options.BunCachePath != "" ||
+		options.HomebrewCachePath != "" ||
+		options.ContainerDataPath != "" ||
+		options.DockerCachePath != ""
+}
+
+// StorageShellBlockContent returns the portable cache/container shell exports.
+func StorageShellBlockContent(options ShellBlockOptions) string {
+	var lines []string
+	if options.HomebrewCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export HOMEBREW_CACHE=%s", ShellQuote(options.HomebrewCachePath)))
+	}
+	if options.BunCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export BUN_INSTALL_CACHE_DIR=%s", ShellQuote(options.BunCachePath)))
+	}
+	if options.ContainerDataPath != "" {
+		lines = append(lines, fmt.Sprintf("export DRIVE_AGENT_CONTAINER_DATA=%s", ShellQuote(options.ContainerDataPath)))
+	}
+	if options.DockerCachePath != "" {
+		lines = append(lines, fmt.Sprintf("export DRIVE_AGENT_DOCKER_BUILD_CACHE=%s", ShellQuote(options.DockerCachePath)))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// StorageShellBlockAlreadyInstalled checks whether the storage block is present.
+func StorageShellBlockAlreadyInstalled(configPath string) (bool, error) {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return strings.Contains(string(data), storageShellBlockStart), nil
+}
+
+// AppendOrUpdateStorageShellBlock appends or replaces the drive-agent storage
+// block. It creates a backup before changing an existing shell config file.
+func AppendOrUpdateStorageShellBlock(configPath string, options ShellBlockOptions) (string, bool, error) {
+	if !StorageShellBlockNeeded(options) {
+		return "", false, nil
+	}
+	block := StorageShellBlock(StorageShellBlockContent(options))
+	data, err := os.ReadFile(configPath)
+	if err != nil && !os.IsNotExist(err) {
+		return "", false, fmt.Errorf("read shell config: %w", err)
+	}
+	content := string(data)
+	if strings.Contains(content, block) {
+		return "", false, nil
+	}
+
+	updated := content
+	start := strings.Index(updated, storageShellBlockStart)
+	if start >= 0 {
+		end := strings.Index(updated[start:], storageShellBlockEnd)
+		if end < 0 {
+			return "", false, fmt.Errorf("storage shell block is missing end marker")
+		}
+		end += start + len(storageShellBlockEnd)
+		updated = updated[:start] + block + updated[end:]
+	} else {
+		if strings.TrimSpace(updated) != "" && !strings.HasSuffix(updated, "\n") {
+			updated += "\n"
+		}
+		if strings.TrimSpace(updated) != "" {
+			updated += "\n"
+		}
+		updated += block + "\n"
+	}
+
+	backupPath, err := backupFile(configPath)
+	if err != nil {
+		return "", false, fmt.Errorf("backup shell config: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+		return backupPath, false, fmt.Errorf("create shell config directory: %w", err)
+	}
+	if err := os.WriteFile(configPath, []byte(updated), 0644); err != nil {
+		return backupPath, false, fmt.Errorf("write shell config: %w", err)
+	}
+	return backupPath, true, nil
 }
 
 // ShellBlockAlreadyInstalled checks whether the marked block is already present

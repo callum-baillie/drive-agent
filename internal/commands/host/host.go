@@ -32,8 +32,10 @@ func newSetupCmd() *cobra.Command {
 	cmd.Flags().String("profile", "", "Profile name (minimal, developer, ai-developer, full-stack-saas, mobile, or a drive-local host profile)")
 	cmd.Flags().String("file", "", "Path to a profile JSON file")
 	cmd.Flags().String("cache-mode", "", "Cache mode override: prompt, host-local, external-drive, disabled")
-	cmd.Flags().String("docker-mode", "", "Docker storage mode override: prompt, default, bind-mounts, daemon")
-	cmd.Flags().Bool("yes", false, "Skip confirmation prompts")
+	cmd.Flags().String("docker-mode", "", "Docker storage mode override: prompt, default, bind-mounts, daemon-guidance")
+	cmd.Flags().BoolP("yes", "y", false, "Skip confirmation prompts")
+	cmd.Flags().Bool("force", false, "Attempt package installs even when catalog checks indicate the tool/app is already installed")
+	cmd.Flags().Bool("include-explicit", false, "Include packages marked requiresExplicitApproval when used with --yes")
 	cmd.Flags().Bool("dry-run", false, "Show planned actions without executing")
 	return cmd
 }
@@ -49,6 +51,8 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	cacheModeFlag, _ := cmd.Flags().GetString("cache-mode")
 	dockerModeFlag, _ := cmd.Flags().GetString("docker-mode")
 	autoYes, _ := cmd.Flags().GetBool("yes")
+	force, _ := cmd.Flags().GetBool("force")
+	includeExplicit, _ := cmd.Flags().GetBool("include-explicit")
 	dryRun, _ := cmd.Flags().GetBool("dry-run")
 
 	ui.Header("Drive Agent — Host Setup")
@@ -115,7 +119,10 @@ func runSetup(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("load package catalog: %w", err)
 		}
 		registry := providers.NewRegistry()
-		pkgPlan := buildPackagePlan(profile, cat, registry)
+		pkgPlan := buildPackagePlanWithOptions(profile, cat, registry, packagePlanOptions{
+			Force:           force,
+			IncludeExplicit: includeExplicit,
+		})
 		printPackageSetupPlan(pkgPlan)
 
 		cacheMode := profile.Caches.Mode
@@ -149,7 +156,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 		shellOptions = mergeShellBlockOptions(shellOptions, dockerShellOptions)
 
 		if !dryRun {
-			if err := runProfileSetupPlan(pkgPlan, cacheActions, dockerActions, autoYes); err != nil {
+			if err := runProfileSetupPlan(pkgPlan, cacheActions, dockerActions, setupRunOptions{AutoYes: autoYes}); err != nil {
 				return err
 			}
 		}
@@ -178,7 +185,7 @@ func runSetup(cmd *cobra.Command, args []string) error {
 			if dryRun {
 				fmt.Println()
 				ui.Info("Would add to %s:", shellConfig)
-				fmt.Println(shell.ShellBlock(shell.ShellBlockContentWithOptions(driveRoot, shellOptions)))
+				fmt.Println(shell.ShellBlock(shell.ShellBlockContent(driveRoot)))
 			} else if installShell {
 				backupPath := shell.BackupPathFor(shellConfig)
 				if err := appendShellBlockWithOptions(shellConfig, driveRoot, shellOptions); err != nil {
@@ -192,6 +199,9 @@ func runSetup(cmd *cobra.Command, args []string) error {
 					ui.Success("Shell config updated — restart your shell or run: source %s", shellConfig)
 				}
 			}
+		}
+		if err := applyStorageShellBlock(shellConfig, shellOptions, dryRun, autoYes); err != nil {
+			return err
 		}
 	}
 
@@ -291,11 +301,8 @@ func runPackagesList(cmd *cobra.Command, args []string) error {
 		ui.Header("Packages — " + catFilter)
 		for _, p := range pkgs {
 			installed := ""
-			if p.Check != nil {
-				parts := strings.Fields(p.Check.Command)
-				if len(parts) > 0 && shell.IsCommandAvailable(parts[0]) {
-					installed = ui.Green + " (installed)" + ui.Reset
-				}
+			if isPackageCheckInstalled(&p) {
+				installed = ui.Green + " (installed)" + ui.Reset
 			}
 			fmt.Printf("  %-20s %s%s\n", p.ID, p.Description, installed)
 		}
@@ -503,15 +510,27 @@ func printPackageSetupPlan(plan packagePlan) {
 	fmt.Println()
 	ui.SubHeader("Package Install Plan")
 	for _, action := range plan.Actions {
+		displayName := packageDisplayName(action)
 		switch {
 		case action.Installed:
-			fmt.Printf("  %s%-24s%s already installed\n", ui.Green, action.ID, ui.Reset)
+			detail := ""
+			if action.InstalledDetail != "" {
+				detail = " (" + action.InstalledDetail + ")"
+			}
+			fmt.Printf("  %s%-28s%s already installed%s\n", ui.Green, displayName, ui.Reset, detail)
 		case action.SkipReason != "":
-			fmt.Printf("  %s%-24s%s skipped: %s\n", ui.Yellow, action.ID, ui.Reset, action.SkipReason)
+			fmt.Printf("  %s%-28s%s skipped: %s\n", ui.Yellow, displayName, ui.Reset, action.SkipReason)
 		default:
-			fmt.Printf("  %s%-24s%s %s\n", ui.Cyan, action.ID, ui.Reset, action.Command)
+			fmt.Printf("  %s%-28s%s [%s] %s\n", ui.Cyan, displayName, ui.Reset, action.ManagerID, action.Command)
 		}
 	}
+}
+
+func packageDisplayName(action packageAction) string {
+	if strings.TrimSpace(action.Name) != "" {
+		return action.Name
+	}
+	return action.ID
 }
 
 func printSetupActions(title string, actions []setupAction) {
@@ -533,27 +552,51 @@ func printSetupActions(title string, actions []setupAction) {
 	}
 }
 
-func runProfileSetupPlan(plan packagePlan, cacheActions, dockerActions []setupAction, autoYes bool) error {
-	if !autoYes && !ui.Confirm("Apply profile package/cache/storage changes?", false) {
+type setupRunOptions struct {
+	AutoYes       bool
+	Confirm       func(prompt string, defaultYes bool) bool
+	CommandRunner func(name string, args ...string) (string, error)
+}
+
+type packageInstallFailure struct {
+	Action packageAction
+	Reason string
+}
+
+func runProfileSetupPlan(plan packagePlan, cacheActions, dockerActions []setupAction, opts setupRunOptions) error {
+	if opts.Confirm == nil {
+		opts.Confirm = ui.Confirm
+	}
+	if opts.CommandRunner == nil {
+		opts.CommandRunner = shell.RunCommand
+	}
+	if !opts.AutoYes && !opts.Confirm("Apply profile package/cache/storage changes?", false) {
 		fmt.Println("Skipped profile changes.")
 		return nil
 	}
+	var failures []packageInstallFailure
 	for _, action := range plan.Actions {
 		if action.Installed || action.SkipReason != "" || action.Command == "" {
 			continue
 		}
-		if !autoYes && !ui.Confirm("Run "+action.Command+"?", false) {
+		if !opts.AutoYes && !opts.Confirm(installPrompt(action), false) {
 			continue
 		}
 		parts := strings.Fields(action.Command)
 		if len(parts) == 0 {
 			continue
 		}
-		out, err := shell.RunCommand(parts[0], parts[1:]...)
+		out, err := opts.CommandRunner(parts[0], parts[1:]...)
 		if err != nil {
-			return fmt.Errorf("%s: %s", action.ID, out)
+			failure := packageInstallFailure{Action: action, Reason: failureReason(out, err)}
+			printPackageInstallFailure(failure)
+			failures = append(failures, failure)
+			if !opts.AutoYes && !opts.Confirm("Continue with remaining package installs?", true) {
+				return fmt.Errorf("failed to install %s", packageDisplayName(action))
+			}
+			continue
 		}
-		ui.Success("Installed %s", action.ID)
+		ui.Success("Installed %s", packageDisplayName(action))
 	}
 	if err := applySetupActions(cacheActions); err != nil {
 		return err
@@ -561,7 +604,70 @@ func runProfileSetupPlan(plan packagePlan, cacheActions, dockerActions []setupAc
 	if err := applySetupActions(dockerActions); err != nil {
 		return err
 	}
+	if len(failures) > 0 {
+		printPackageFailureSummary(failures)
+		return fmt.Errorf("%d package install(s) failed", len(failures))
+	}
 	return nil
+}
+
+func installPrompt(action packageAction) string {
+	name := packageDisplayName(action)
+	switch action.ManagerID {
+	case "npm", "pnpm", "bun":
+		if action.InstallGlobal {
+			return fmt.Sprintf("[%s] Install %s globally?", action.ManagerID, name)
+		}
+	case "homebrew", "homebrew-cask", "cargo", "go-install", "pipx", "uv":
+		return fmt.Sprintf("[%s] Install %s?", action.ManagerID, name)
+	}
+	if action.ManagerID != "" {
+		return fmt.Sprintf("[%s] Install %s?", action.ManagerID, name)
+	}
+	return "Install " + name + "?"
+}
+
+func failureReason(output string, err error) string {
+	text := strings.TrimSpace(output)
+	if text == "" && err != nil {
+		text = err.Error()
+	}
+	if path := appBundleConflictPath(text); path != "" {
+		return "app bundle already exists at " + path
+	}
+	if text == "" {
+		return "unknown error"
+	}
+	return text
+}
+
+func appBundleConflictPath(text string) string {
+	const marker = "already an App at '"
+	idx := strings.Index(text, marker)
+	if idx == -1 {
+		return ""
+	}
+	rest := text[idx+len(marker):]
+	end := strings.Index(rest, "'")
+	if end == -1 {
+		return ""
+	}
+	return rest[:end]
+}
+
+func printPackageInstallFailure(failure packageInstallFailure) {
+	displayName := packageDisplayName(failure.Action)
+	ui.Error("Failed to install %s via %s", displayName, failure.Action.ManagerID)
+	fmt.Printf("  Reason: %s\n", failure.Reason)
+	fmt.Println("  Suggested action: skip this package or use --force after reviewing manually.")
+}
+
+func printPackageFailureSummary(failures []packageInstallFailure) {
+	fmt.Println()
+	ui.Warning("%d package install(s) failed:", len(failures))
+	for _, failure := range failures {
+		fmt.Printf("  - %s via %s: %s\n", packageDisplayName(failure.Action), failure.Action.ManagerID, failure.Reason)
+	}
 }
 
 func resolveInteractiveCacheMode(mode string, dryRun, autoYes bool) (string, error) {
@@ -643,7 +749,52 @@ func appendShellBlockWithOptions(configPath, driveRoot string, options shell.She
 		return fmt.Errorf("open shell config: %w", err)
 	}
 	defer f.Close()
-	block := shell.ShellBlock(shell.ShellBlockContentWithOptions(driveRoot, options))
+	block := shell.ShellBlock(shell.ShellBlockContent(driveRoot))
 	_, err = fmt.Fprintln(f, "\n"+block)
 	return err
+}
+
+func applyStorageShellBlock(configPath string, options shell.ShellBlockOptions, dryRun, autoYes bool) error {
+	if !shell.StorageShellBlockNeeded(options) {
+		return nil
+	}
+	installed, err := shell.StorageShellBlockAlreadyInstalled(configPath)
+	if err != nil {
+		return fmt.Errorf("read storage shell config: %w", err)
+	}
+	if dryRun {
+		fmt.Println()
+		if installed {
+			ui.Info("Would update storage exports in %s:", configPath)
+		} else {
+			ui.Info("Would add storage exports to %s:", configPath)
+		}
+		fmt.Println(shell.StorageShellBlock(shell.StorageShellBlockContent(options)))
+		return nil
+	}
+	installStorage := autoYes
+	if !autoYes {
+		prompt := "\nInstall portable cache/container shell exports?"
+		if installed {
+			prompt = "\nUpdate portable cache/container shell exports?"
+		}
+		installStorage = ui.Confirm(prompt, true)
+	}
+	if !installStorage {
+		ui.Info("Skipped portable cache/container shell exports")
+		return nil
+	}
+	backupPath, changed, err := shell.AppendOrUpdateStorageShellBlock(configPath, options)
+	if err != nil {
+		return fmt.Errorf("install storage shell config: %w", err)
+	}
+	if !changed {
+		ui.Success("Storage shell block already up to date in %s", filepath.Base(configPath))
+		return nil
+	}
+	if backupPath != "" {
+		ui.Success("Backed up %s → %s", filepath.Base(configPath), filepath.Base(backupPath))
+	}
+	ui.Success("Storage shell config updated — restart your shell or run: source %s", configPath)
+	return nil
 }
