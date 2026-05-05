@@ -216,9 +216,11 @@ func runSetup(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Println()
-	ui.Success("Host setup complete")
 	if dryRun {
+		ui.Success("Host setup plan complete")
 		ui.DimText("(dry-run — no changes were made)")
+	} else {
+		ui.Success("Host setup complete")
 	}
 	return nil
 }
